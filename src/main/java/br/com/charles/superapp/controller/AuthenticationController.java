@@ -5,6 +5,7 @@ import br.com.charles.superapp.dto.LoginResponseDto;
 import br.com.charles.superapp.dto.RegisterDto;
 import br.com.charles.superapp.service.AuthenticationService;
 import br.com.charles.superapp.service.UsuarioService;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -30,6 +31,7 @@ public class AuthenticationController {
     @POST
     @Path("/login")
     @Transactional
+    @PermitAll
     @Operation(summary = "Realiza login e retorna token JWT")
     public Response login(LoginRequestDto loginRequestDto) {
         try {
@@ -44,6 +46,7 @@ public class AuthenticationController {
     @POST
     @Path("/register")
     @Transactional
+    @PermitAll
     @Operation(summary = "Registra um novo usuário no sistema")
     public Response register(@Valid RegisterDto data) {
 
