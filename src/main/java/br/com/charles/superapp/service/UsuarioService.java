@@ -7,6 +7,7 @@ import io.quarkus.elytron.security.common.BcryptUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ public class UsuarioService extends GenericServiceImpl<Usuario, Long> {
     }
 
     public boolean validarPassword(Usuario usuario, String rawPassword) {
-        return usuario.getSenha().equals(rawPassword);
+        return BCrypt.checkpw(rawPassword, usuario.getSenha());
     }
 
     public void registrarUsuario(RegisterDto data) {
