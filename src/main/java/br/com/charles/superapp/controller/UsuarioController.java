@@ -12,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.util.List;
 
 @Path("/usuarios")
-@RolesAllowed("ADMIN")
+@RolesAllowed("admin")
 @Tag(name = "Usuários", description = "Operações relacionadas a usuários do sistema")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
