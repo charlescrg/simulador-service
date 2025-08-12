@@ -3,6 +3,7 @@ package br.com.charles.superapp.controller;
 import br.com.charles.superapp.dto.BotReplyDto;
 import br.com.charles.superapp.dto.UsuarioMessageDto;
 import br.com.charles.superapp.service.session.ChatSession;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -20,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Path("/chat")
 @Tag(name = "Chat", description = "Fluxo de conversação do assistente virtual")
+@RolesAllowed("admin")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public class ChatController {
@@ -28,7 +30,7 @@ public class ChatController {
 
     @POST
     @Operation(summary = "Processa uma mensagem do usuário",
-            description = "Recebe a mensagem e mantém o estado da conversa usando uma sessão de chat")
+            description = "Recebe a mensagem e mantém o estado da conversa usando uma sessão de chat.")
     @APIResponse(responseCode = "200", description = "Resposta do assistente virtual",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = BotReplyDto.class)))
