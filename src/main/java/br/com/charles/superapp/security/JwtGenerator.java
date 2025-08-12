@@ -1,4 +1,4 @@
-package br.com.charles.superapp.infra.security;
+package br.com.charles.superapp.security;
 
 import br.com.charles.superapp.entity.Usuario;
 import io.smallrye.jwt.build.Jwt;

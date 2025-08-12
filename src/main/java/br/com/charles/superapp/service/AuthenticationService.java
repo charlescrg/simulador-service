@@ -1,7 +1,7 @@
 package br.com.charles.superapp.service;
 
 import br.com.charles.superapp.entity.Usuario;
-import br.com.charles.superapp.infra.security.JwtGenerator;
+import br.com.charles.superapp.security.JwtGenerator;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
