@@ -28,7 +28,7 @@ public class ChatController {
 
     @POST
     @Operation(summary = "Processa uma mensagem do usuário",
-            description = "Recebe a mensagem e mantém o estado da conversa usando uma sessão de chat.")
+            description = "Recebe a mensagem e mantém o estado da conversa usando uma sessão de chat")
     @APIResponse(responseCode = "200", description = "Resposta do assistente virtual",
             content = @Content(mediaType = MediaType.APPLICATION_JSON,
                     schema = @Schema(implementation = BotReplyDto.class)))
