@@ -1,4 +1,4 @@
-package br.com.charles.superapp.controller;
+package br.com.charles.superapp.resource;
 
 import br.com.charles.superapp.entity.Usuario;
 import br.com.charles.superapp.service.UsuarioService;
@@ -11,12 +11,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.util.List;
 
-@Path("/usuarios")
+@Path("/api/usuarios")
 @RolesAllowed("admin")
 @Tag(name = "Usuários", description = "Operações relacionadas a usuários do sistema")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class UsuarioController {
+public class UsuarioResource {
 
     @Inject
     UsuarioService usuarioService;

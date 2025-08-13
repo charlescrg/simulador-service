@@ -1,4 +1,4 @@
-package br.com.charles.superapp.controller;
+package br.com.charles.superapp.resource;
 
 import br.com.charles.superapp.dto.LoginRequestDto;
 import br.com.charles.superapp.dto.LoginResponseDto;
@@ -20,7 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 @Path("/auth")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class AuthenticationController {
+public class AuthenticationResource {
 
     @Inject
     UsuarioService usuarioService;

@@ -1,4 +1,4 @@
-package br.com.charles.superapp.controller;
+package br.com.charles.superapp.resource;
 
 import br.com.charles.superapp.entity.Agencia;
 import br.com.charles.superapp.service.AgenciaService;
@@ -14,7 +14,7 @@ import java.util.List;
 @Tag(name = "Agências", description = "Operações relacionadas a agências bancárias")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class AgenciaController {
+public class AgenciaResource {
 
     @Inject
     AgenciaService agenciaService;

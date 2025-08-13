@@ -1,4 +1,4 @@
-package br.com.charles.superapp.controller;
+package br.com.charles.superapp.resource;
 
 import br.com.charles.superapp.dto.BotReplyDto;
 import br.com.charles.superapp.dto.UsuarioMessageDto;
@@ -19,12 +19,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Path("/chat")
+@Path("/api/chat")
 @Tag(name = "Chat", description = "Fluxo de conversação do assistente virtual")
 @RolesAllowed("admin")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public class ChatController {
+public class ChatResource {
 
     private static final Map<String, ChatSession> sessions = new ConcurrentHashMap<>();
 
