@@ -26,16 +26,23 @@ public class SimulacaoResource {
     @POST
     @Operation(summary = "Simula empréstimo com SAC e PRICE")
     @Authenticated
-    public Response simular(@Valid SimulacaoRequestDto request) {
-        try {
-            SimulacaoResponseDto response = simulacaoService.simular(request);
-            return Response.ok(response).build();
-        } catch (IllegalArgumentException ex) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(ex.getMessage()).build();
-        } catch (Exception ex) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Erro interno: " + ex.getMessage()).build();
-        }
+
+public Response simular(@Valid SimulacaoRequestDto request,
+                        @Context HttpServletRequest httpRequest,
+                        @Context SecurityContext securityContext) {
+
+    String ip = httpRequest.getRemoteAddr();
+    String usuario = securityContext.getUserPrincipal().getName();
+
+    log.info("Simulação solicitada por usuário={} IP={} valor={} prazo={}",
+             usuario, ip, request.getValorDesejado(), request.getPrazo());
+
+    try {
+        var resposta = simulacaoService.simular(request);
+        log.info("Simulação concluída com sucesso para usuário={}", usuario);
+        return Response.ok(resposta).build();
+    } catch (Exception e) {
+        log.error("Erro na simulação para usuário={} IP={}", usuario, ip, e);
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
     }
 }
