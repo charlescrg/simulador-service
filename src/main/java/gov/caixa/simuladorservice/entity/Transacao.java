@@ -34,16 +34,6 @@ public class Transacao extends PanacheEntityBase {
     @Schema(description = "Descrição da transação", example = "Transferência para conta 12345-6")
     private String descricao;
 
-    @ManyToOne
-    @JoinColumn(name = "conta_origem_id")
-    @Schema(description = "Conta de origem")
-    private ContaBancaria contaOrigem;
-
-    @ManyToOne
-    @JoinColumn(name = "conta_destino_id")
-    @Schema(description = "Conta de destino")
-    private ContaBancaria contaDestino;
-
     @Schema(description = "Status da transação", example = "Concluída")
     private String status;
 }

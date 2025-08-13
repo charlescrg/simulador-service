@@ -54,4 +54,14 @@
    Importe a coleção Postman disponível em:
       [aqui](postman/SuperApp.postman_collection.json) 
 
-  
+
+### Autenticação da API
+
+      Esta API usa **JWT (JSON Web Token)** para autenticação. 
+      Todos os endpoints requerem um token JWT válido no header `Authorization`.
+
+### Como usar
+
+      Envie o token JWT no header (Authorization) da sua requisição assim:
+
+      Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL215LWFwcCIsInN1YiI6InVzZXJvMSIsImF1ZCI6Imh0dHBzOi8vbXktYXBwIiwiZ3JvdXBzIjoidXNlcixhZG1pbiIsImlhdCI6MTY5MjYxMDAwMCwiZXhwIjoxNzM1Njg5NjAwfQ.QzKH-E2vYPyrq68J8gIpqTSy6t42DmPCWltxF6DYAX4iXkBpcX2xbiTIu4Tx5QKfTkUo-rCS6RhnK5oIT_0ZpP61N6JYwcGIJajSLOiK7ZTgujzHYwqCYl5DHosHG0VLQuGvZ4rCG9y0RtJr8TspmspIZ-r9JuNpkQFk89YZ9dwPc

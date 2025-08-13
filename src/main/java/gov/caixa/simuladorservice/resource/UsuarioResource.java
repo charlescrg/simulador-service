@@ -2,7 +2,7 @@ package gov.caixa.simuladorservice.resource;
 
 import gov.caixa.simuladorservice.entity.Usuario;
 import gov.caixa.simuladorservice.service.UsuarioService;
-import jakarta.annotation.security.RolesAllowed;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -12,7 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import java.util.List;
 
 @Path("/api/usuarios")
-@RolesAllowed("admin")
+@Authenticated
 @Tag(name = "Usuários", description = "Operações relacionadas a usuários do sistema")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
