@@ -5,9 +5,11 @@
 
 ## Tecnologias Utilizadas
 - Java 17
-- Spring Boot
+- Quarkus
 - Docker / Docker Compose
 - Swagger (OpenAPI)
+- Bucket4j (Rate Limiting)
+- SLF4J + Logback (Logging)
 - JUnit / Mockito
 - GitHub Actions (CI/CD)
 - PostgreSQL
@@ -66,3 +68,13 @@
 
       Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL215LWFwcCIsInVwbiI6ImpvYW8uZ29tZXMiLCJncm91cHMiOlsiYWRtaW4iXSwiaWF0IjoxNzU1MDQ5MzgwLCJleHAiOjE3ODY1ODUzODAsImp0aSI6ImE4NmY2N2QwLTMzODAtNGE0NC04NDI2LWRmYmQ3YjUwODQwZSJ9.JKy9adiZxDDV-H9Re-WT4tv7DiYgpgHdHL-66tHkj3AmYlRu6ELJajLlGYDEt1w_Vn9lLCB6LTfdd_LIhmwdN1Jdkzeb5JRBDp7QnsXNFOutwOCfQPMuPuMuKHuecaEQmBtvYtWVqAXDuQb-bTshRTz4mBaTZNetvrA17zb1tfCq2lyqNqMttO7ktgE9R0AhUAjrM7gd_CMUq31EVXms5pUt7tuk7sEBuJSHzRPlut9Gc8fCqRAAqJ82kbd5BbAvM_TebL549uC9fyn-Nyy7oKjl710i_yyG2hQRXdJSt8qhJqOLIA0R1fDYCpSPvDtz0f21DKuIe2eLe0Ra6JR2Ng
 
+
+## Segurança
+
+O endpoint de simulação está protegido com:
+
+- `@Authenticated`: exige autenticação do usuário.
+- `@Valid`: valida os dados da requisição.
+- `@Schema`: documenta os campos da API.
+- **Validação de entrada**: com limites mínimos e máximos para valor e prazo.
+- **Auditoria e logging**: registra IP, usuário e parâmetros da requisição.
