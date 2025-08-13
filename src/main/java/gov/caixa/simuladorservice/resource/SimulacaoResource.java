@@ -26,7 +26,7 @@ public class SimulacaoResource {
     @POST
     @Operation(summary = "Simula empréstimo com SAC e PRICE")
     @Authenticated
-    public Response simular(SimulacaoRequestDto request) {
+    public Response simular(@Valid SimulacaoRequestDto request) {
         try {
             SimulacaoResponseDto response = simulacaoService.simular(request);
             return Response.ok(response).build();
