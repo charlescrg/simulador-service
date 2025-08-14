@@ -15,6 +15,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.*;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.slf4j.Logger;
@@ -45,10 +47,76 @@ public class SimulacaoResource {
 
     @POST
     @Operation(summary = "Simula empréstimo com SAC e PRICE")
-    @APIResponse(responseCode = "200", description = "Simulação realizada com sucesso")
-    @APIResponse(responseCode = "400", description = "Dados inválidos na requisição")
-    @APIResponse(responseCode = "401", description = "Usuário não autenticado")
-    @APIResponse(responseCode = "429", description = "Limite de requisições excedido")
+    @APIResponse(
+            responseCode = "200",
+            description = "Simulação realizada com sucesso",
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Exemplo de simulação",
+                            value = "{\n" +
+                                    "  \"valorParcela\": 875.00,\n" +
+                                    "  \"valorTotal\": 10500.00,\n" +
+                                    "  \"tipo\": \"PRICE\"\n" +
+                                    "}"
+                    )
+            )
+    )
+    @APIResponse(
+            responseCode = "400",
+            description = "Requisição com formato inválido",
+            content = @Content(
+                    mediaType = "application/problem+json",
+                    examples = @ExampleObject(
+                            name = "Exemplo de erro 400",
+                            value = "{\n" +
+                                    "  \"type\": \"https://pix.bcb.gov.br/api/v2/error/SimulacaoInvalida\",\n" +
+                                    "  \"title\": \"Operação inválida.\",\n" +
+                                    "  \"status\": 400,\n" +
+                                    "  \"detail\": \"O objeto simulacao.valorDesejado não respeita o schema.\",\n" +
+                                    "  \"violacoes\": [\n" +
+                                    "    {\n" +
+                                    "      \"razao\": \"Valor menor que R$100\",\n" +
+                                    "      \"propriedade\": \"valorDesejado\"\n" +
+                                    "    }\n" +
+                                    "  ]\n" +
+                                    "}"
+                    )
+            )
+    )
+    @APIResponse(
+            responseCode = "401",
+            description = "Usuário não autenticado",
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Exemplo 401",
+                            value = "{ \"error\": \"Token inválido ou ausente\" }"
+                    )
+            )
+    )
+    @APIResponse(
+            responseCode = "403",
+            description = "Acesso não permitido",
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Exemplo 403",
+                            value = "{ \"error\": \"Usuário não tem permissão para essa ação\" }"
+                    )
+            )
+    )
+    @APIResponse(
+            responseCode = "429",
+            description = "Limite de requisições excedido",
+            content = @Content(
+                    mediaType = "application/json",
+                    examples = @ExampleObject(
+                            name = "Exemplo 429",
+                            value = "{ \"error\": \"Limite de requisições atingido. Tente novamente mais tarde.\" }"
+                    )
+            )
+    )
     @Authenticated
     public Response simular(@Valid SimulacaoRequestDto request,
                             @Context UriInfo uriInfo,
