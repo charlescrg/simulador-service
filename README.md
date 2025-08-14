@@ -28,29 +28,30 @@
    ### Passos
    1. Clone o repositório:
       
-      git clone https://github.com/charlescrg/superapp-backend.git
-      cd superapp-backend
+	      git clone https://github.com/charlescrg/superapp-backend.git
+	      cd superapp-backend
    
    3. Execute com Docker:
-      docker-compose up -d
 
-   4. Acesse a API:
+      		docker-compose up -d
+
+   5. Acesse a API:
    
-      Localmente (ambiente de desenvolvimento):
-         http://localhost:8080/api
+	      Localmente (ambiente de desenvolvimento):
+	         http://localhost:8080/api
+	   
+	      Produção (servidor online):
+	         https://seu-dominio-ou-ip-de-producao/api
    
-      Produção (servidor online):
-         https://seu-dominio-ou-ip-de-producao/api
+   6. Acesse a documentação Swagger:
    
-   5. Acesse a documentação Swagger:
-   
-      Localmente:
-      http://localhost:8080/swagger-ui
-      Para acessar a documentação quando estiver rodando o servidor localmente.
-   
-      Produção:
-      https://seu-dominio-ou-ip-de-producao/swagger-ui
-      Para acessar a documentação da API em produção.
+	      Localmente:
+	      http://localhost:8080/swagger-ui
+	      Para acessar a documentação quando estiver rodando o servidor localmente.
+	   
+	      Produção:
+	      https://seu-dominio-ou-ip-de-producao/swagger-ui
+	      Para acessar a documentação da API em produção.
 
 ## Testes com Postman
    Importe a coleção Postman disponível em:
