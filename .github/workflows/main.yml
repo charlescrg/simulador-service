@@ -49,7 +49,7 @@ jobs:
 
       - name: Executar script init.sql
         run: |
-          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -d hack -i /init-db/init.sql
+          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -d hack -i init-db/init.sql
 
       - name: Build com Maven (sem rodar testes)
         run: mvn clean install -DskipTests
