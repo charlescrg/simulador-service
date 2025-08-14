@@ -26,7 +26,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Path("/api/simulacao")
+@Path("/api/v1/simulacao")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Simulação", description = "Endpoint para simulação de empréstimos")
