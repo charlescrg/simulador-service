@@ -61,12 +61,15 @@
 
       Esta API usa **JWT (JSON Web Token)** para autenticação. 
       Todos os endpoints requerem um token JWT válido no header `Authorization`.
+	  Para fins de avaliação a collection já está com o token, já que este projeto não vai gerá-lo, apenas validar.
 
-### Como usar
 
-      Envie o token JWT no header (Authorization) da sua requisição assim:
+ **Aviso de Segurança**
 
-      Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL215LWFwcCIsInVwbiI6ImpvYW8uZ29tZXMiLCJncm91cHMiOlsiYWRtaW4iXSwiaWF0IjoxNzU1MDQ5MzgwLCJleHAiOjE3ODY1ODUzODAsImp0aSI6ImE4NmY2N2QwLTMzODAtNGE0NC04NDI2LWRmYmQ3YjUwODQwZSJ9.JKy9adiZxDDV-H9Re-WT4tv7DiYgpgHdHL-66tHkj3AmYlRu6ELJajLlGYDEt1w_Vn9lLCB6LTfdd_LIhmwdN1Jdkzeb5JRBDp7QnsXNFOutwOCfQPMuPuMuKHuecaEQmBtvYtWVqAXDuQb-bTshRTz4mBaTZNetvrA17zb1tfCq2lyqNqMttO7ktgE9R0AhUAjrM7gd_CMUq31EVXms5pUt7tuk7sEBuJSHzRPlut9Gc8fCqRAAqJ82kbd5BbAvM_TebL549uC9fyn-Nyy7oKjl710i_yyG2hQRXdJSt8qhJqOLIA0R1fDYCpSPvDtz0f21DKuIe2eLe0Ra6JR2Ng
+	As chaves privadas e públicas estão incluídas diretamente no código apenas para fins de avaliação no Hackathon.
+
+	**Em ambientes de produção**, recomenda-se fortemente:
+	- Utilizar ferramentas como **HashiCorp Vault** ou **AWS Secrets Manager** para gerenciar segredos.
 
 
 ## Segurança
