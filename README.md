@@ -32,8 +32,8 @@
       cd superapp-backend
    
    3. Execute com Docker:
-      docker-compose up --build
-   
+      docker-compose up -d
+
    4. Acesse a API:
    
       Localmente (ambiente de desenvolvimento):
