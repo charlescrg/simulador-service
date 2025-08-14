@@ -1,0 +1,50 @@
+{
+	"info": {
+		"_postman_id": "fccef794-26da-4e6f-990f-042dd45791bc",
+		"name": "simulador-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21930656"
+	},
+	"item": [
+		{
+			"name": "Local",
+			"item": [
+				{
+					"name": "simular emprestimo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL215LWFwcCIsInVwbiI6ImpvYW8uZ29tZXMiLCJncm91cHMiOlsiYWRtaW4iXSwiaWF0IjoxNzU1MDQ5NDc4LCJleHAiOjE3ODY1ODU0NzgsImp0aSI6IjlmZTQxZjMwLWQ4Y2YtNDAyZS1hNzcyLWNkOTBhYjYxYWQ3YSJ9.bhek_19KTwGKzEF65tCXxy_NJWIdWS68F9_AUxZrcmf4E0pTA4XcGieiev6gYweCSNsulloupZLAqCBf1JXietcstREcRearFRlw-vxme3qUMsjdGm2idVjjbOm47LZhNngmzBWOKHpBZ7z2W0-b1l-Y5aRsqCwaC4Wt3UhifguXwcgSAFFF01ie05HNLiSjtGF2KXHZ9YP8zbLgyIwExTfxXEp7tjbgKdvHoV_cehVgoVKKbA_rNNDWb54gz7vJc7lLGSvfgcIZ4wUOw9pPfGxf_Ed7kiPSEty_QLmM3IOQUlrTrSBVmWPsEv_MmCfz_szChDXqtVIIO0OmCnjhyg",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"valorDesejado\": 10000.00,\r\n  \"prazo\": 24\r\n}\r\n"
+						},
+						"url": {
+							"raw": "{{baseURL}}/api/simulacao",
+							"host": [
+								"{{baseURL}}"
+							],
+							"path": [
+								"api",
+								"simulacao"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "http://localhost:8080",
+			"type": "default"
+		}
+	]
+}

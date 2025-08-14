@@ -9,7 +9,7 @@ import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @ApplicationScoped
-public class ProdutoRepository {
+public class ProdutoRepository implements GenericRepository<Produto, Integer> {
 
     @PersistenceContext
     EntityManager em;

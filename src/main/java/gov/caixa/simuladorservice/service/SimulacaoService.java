@@ -12,6 +12,7 @@ import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,16 +84,26 @@ public class SimulacaoService {
 
     private ResultadoSimulacaoDto calcularPRICE(BigDecimal valor, BigDecimal taxa, int prazo) {
         List<ParcelaDto> parcelas = new ArrayList<>();
+
+        // Definir precisão e modo de arredondamento
+        MathContext mc = new MathContext(15, RoundingMode.HALF_UP);
+
         BigDecimal taxaMensal = taxa;
-        // Cálculo da prestação constante
-        BigDecimal fator = BigDecimal.ONE.subtract(BigDecimal.ONE.add(taxaMensal).pow(-prazo, RoundingMode.HALF_UP));
-        BigDecimal prestacao = valor.multiply(taxaMensal).divide(fator, 2, RoundingMode.HALF_UP);
+
+        // Cálculo do fator PRICE: (1 - (1 + i)^(-n))
+        BigDecimal fator = BigDecimal.ONE.subtract(
+                BigDecimal.ONE.add(taxaMensal).pow(-prazo, mc)
+        );
+
+        // Prestação constante: P = V * i / fator
+        BigDecimal prestacao = valor.multiply(taxaMensal, mc)
+                .divide(fator, 2, RoundingMode.HALF_UP);
 
         BigDecimal saldo = valor;
         for (int i = 1; i <= prazo; i++) {
-            BigDecimal juros = saldo.multiply(taxaMensal).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal amortizacao = prestacao.subtract(juros).setScale(2, RoundingMode.HALF_UP);
-            saldo = saldo.subtract(amortizacao).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal juros = saldo.multiply(taxaMensal, mc).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal amortizacao = prestacao.subtract(juros, mc).setScale(2, RoundingMode.HALF_UP);
+            saldo = saldo.subtract(amortizacao, mc).setScale(2, RoundingMode.HALF_UP);
 
             parcelas.add(ParcelaDto.builder()
                     .numero(i)
@@ -107,4 +118,5 @@ public class SimulacaoService {
                 .parcelas(parcelas)
                 .build();
     }
+
 }

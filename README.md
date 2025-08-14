@@ -54,7 +54,7 @@
 
 ## Testes com Postman
    Importe a coleção Postman disponível em:
-      [aqui](postman/SuperApp.postman_collection.json) 
+      [aqui](postman/simulador-service.postman_collection.json) 
 
 
 ### Autenticação da API

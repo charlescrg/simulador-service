@@ -127,6 +127,15 @@
       <artifactId>resilience4j-spring-boot2</artifactId>
       <version>2.2.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.bucket4j</groupId>
+      <artifactId>bucket4j-core</artifactId>
+      <version>8.10.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-jdbc-mssql</artifactId>
+    </dependency>
 
   </dependencies>
   <build>
