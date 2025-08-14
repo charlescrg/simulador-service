@@ -33,8 +33,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Esperar banco subir
-        run: sleep 20
+      - name: Criar banco de dados
+        run: |
+          sleep 30
+          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q "CREATE DATABASE seubanco"
 
       - name: Build com Maven
         run: mvn clean install -DskipTests
