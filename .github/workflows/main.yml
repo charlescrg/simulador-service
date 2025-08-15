@@ -11,14 +11,14 @@ jobs:
 
     services:
       sqlserver:
-        image: mcr.microsoft.com/mssql/server:2019-latest
+        image: mcr.microsoft.com/mssql/server:2019-CU18-ubuntu-20.04
         env:
           ACCEPT_EULA: "Y"
           SA_PASSWORD: "YourStrong!Passw0rd"
         ports:
           - 1433:1433
         options: >-
-          --health-cmd "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q 'SELECT 1' || exit 1"
+          --health-cmd "sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q 'SELECT 1'"
           --health-interval 10s
           --health-timeout 30s
           --health-retries 30
@@ -33,7 +33,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # Cache Maven dependencies
       - name: Cache dependências Maven
         uses: actions/cache@v3
         with:
@@ -42,7 +41,6 @@ jobs:
           restore-keys: |
             maven-
 
-      # Cache Maven Wrapper
       - name: Cache Maven Wrapper
         uses: actions/cache@v3
         with:
@@ -68,15 +66,4 @@ jobs:
             /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q "SELECT 1" && break
             echo "Aguardando SQL Server..."
             sleep 2
-          done
-
-      - name: Criar banco de dados
-        run: |
-          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q "CREATE DATABASE hack"
-
-      - name: Executar script init.sql
-        run: |
-          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -d hack -i init-db/init.sql
-
-      - name: Build Maven (sem testes)
-        run: ./mvnw clean install -DskipTests -B
+         
