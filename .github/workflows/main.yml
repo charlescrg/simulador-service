@@ -70,4 +70,4 @@ jobs:
           /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -d hack -i init-db/init.sql
 
       - name: Build com Maven
-        run: mvn clean install
+        run: mvn clean install -Dquarkus.analytics.enabled=false
