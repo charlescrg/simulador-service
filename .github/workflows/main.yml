@@ -71,3 +71,5 @@ jobs:
 
       - name: Build com Maven
         run: mvn clean install -Dquarkus.analytics.enabled=false
+        env:
+          CI: true
