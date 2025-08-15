@@ -18,10 +18,10 @@ jobs:
         ports:
           - 1433:1433
         options: >-
-          --health-cmd "exit 0"
+          --health-cmd "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q 'SELECT 1' || exit 1"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     steps:
       - name: Checkout do código
@@ -42,17 +42,21 @@ jobs:
           echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
           source ~/.bashrc
 
+      - name: Esperar SQL Server estar pronto
+        run: |
+          for i in {1..30}; do
+            /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q "SELECT 1" && break
+            echo "Aguardando SQL Server..."
+            sleep 2
+          done
+
       - name: Criar banco de dados
         run: |
-          sleep 30
           /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q "CREATE DATABASE hack"
 
       - name: Executar script init.sql
         run: |
           /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -d hack -i init-db/init.sql
 
-      - name: Build com Maven (sem rodar testes)
-        run: mvn clean install -DskipTests
-
-      - name: Rodar testes
-        run: mvn test
+      - name: Build e Testes com Maven
+        run: mvn clean verify -B
