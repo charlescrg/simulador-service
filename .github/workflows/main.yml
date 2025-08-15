@@ -20,8 +20,8 @@ jobs:
         options: >-
           --health-cmd "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q 'SELECT 1' || exit 1"
           --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
+          --health-timeout 30s
+          --health-retries 30
 
     steps:
       - name: Checkout do código
@@ -33,13 +33,25 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Cache Maven
+      # Cache Maven dependencies
+      - name: Cache dependências Maven
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             maven-
+
+      # Cache Maven Wrapper
+      - name: Cache Maven Wrapper
+        uses: actions/cache@v3
+        with:
+          path: |
+            .mvn/wrapper
+            mvnw
+          key: maven-wrapper-${{ hashFiles('mvnw', '.mvn/wrapper/maven-wrapper.properties') }}
+          restore-keys: |
+            maven-wrapper-
 
       - name: Instalar sqlcmd
         run: |
@@ -52,7 +64,7 @@ jobs:
 
       - name: Esperar SQL Server estar pronto
         run: |
-          for i in {1..30}; do
+          for i in {1..60}; do
             /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q "SELECT 1" && break
             echo "Aguardando SQL Server..."
             sleep 2
@@ -67,4 +79,4 @@ jobs:
           /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -d hack -i init-db/init.sql
 
       - name: Build Maven (sem testes)
-        run: mvn clean install -DskipTests -B
+        run: ./mvnw clean install -DskipTests -B
