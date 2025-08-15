@@ -32,7 +32,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-		  
+
       - name: Cache dependências Maven
         uses: actions/cache@v3
         with:
@@ -40,7 +40,7 @@ jobs:
           key: maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             maven-
-			
+
       - name: Cache Maven Wrapper
         uses: actions/cache@v3
         with:
@@ -50,7 +50,7 @@ jobs:
           key: maven-wrapper-${{ hashFiles('mvnw', '.mvn/wrapper/maven-wrapper.properties') }}
           restore-keys: |
             maven-wrapper-
-			
+
       - name: Instalar sqlcmd
         run: |
           curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
@@ -69,8 +69,5 @@ jobs:
         run: |
           /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -d hack -i simulador-service/init-db/init.sql
 
-      - name: Build com Maven (sem rodar testes)
-        run: mvn clean install -DskipTests
-
-      - name: Rodar testes
-        run: mvn test
+      - name: Build com Maven
+        run: mvn clean install
