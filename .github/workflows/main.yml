@@ -66,4 +66,15 @@ jobs:
             /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q "SELECT 1" && break
             echo "Aguardando SQL Server..."
             sleep 2
-         
+          done
+
+      - name: Criar banco de dados
+        run: |
+          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -Q "CREATE DATABASE hack"
+
+      - name: Executar script init.sql
+        run: |
+          /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -d hack -i init-db/init.sql
+
+      - name: Build Maven (sem testes)
+        run: ./mvnw clean install -DskipTests -B
