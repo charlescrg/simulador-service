@@ -77,3 +77,15 @@ O endpoint de simulação está protegido com:
 	- `@Schema`: documenta os campos da API.
 	- **Validação de entrada**: com limites mínimos e máximos para valor e prazo.
 	- **Auditoria e logging**: registra IP, usuário e parâmetros da requisição.
+
+## Integração Contínua
+
+	Este projeto utiliza GitHub Actions para realizar o build automático a cada push na branch `master`.  
+	A pipeline inclui:
+	
+	- Configuração do ambiente Java 17
+	- Inicialização de banco SQL Server em container
+	- Execução de script de criação de tabelas (`init.sql`)
+	- Build do projeto com Maven
+	
+	O workflow está definido em `.github/workflows/build.yml`.
