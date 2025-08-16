@@ -1,13 +1,16 @@
 package gov.caixa.simuladorservice.dto;
 
+import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.math.BigDecimal;
 
-import jakarta.validation.constraints.*;
-
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Schema(name = "SimulacaoRequest", description = "Dados da requisição de simulação")
 public class SimulacaoRequestDto {
 

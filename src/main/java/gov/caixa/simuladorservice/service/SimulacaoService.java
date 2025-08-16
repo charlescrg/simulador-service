@@ -7,14 +7,18 @@ import gov.caixa.simuladorservice.dto.SimulacaoResponseDto;
 import gov.caixa.simuladorservice.entity.Produto;
 import gov.caixa.simuladorservice.producer.EventHubProducer;
 import gov.caixa.simuladorservice.repository.ProdutoRepository;
+import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Fallback;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -27,6 +31,9 @@ public class SimulacaoService {
     @Inject
     EventHubProducer eventHubProducer;
 
+    @CacheResult(cacheName = "simulacoes")
+    @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 1, delay = 5000)
+    @Fallback(fallbackMethod = "simularFallback")
     public SimulacaoResponseDto simular(SimulacaoRequestDto request) {
 
         // Buscar produto compatível
@@ -111,6 +118,12 @@ public class SimulacaoService {
                 .tipo("PRICE")
                 .parcelas(parcelas)
                 .build();
+    }
+    public SimulacaoResponseDto simularFallback(SimulacaoRequestDto request) {
+        SimulacaoResponseDto fallback = new SimulacaoResponseDto();
+        fallback.setDescricaoProduto("Simulação indisponível no momento");
+        fallback.setResultadoSimulacao(Collections.emptyList());
+        return fallback;
     }
 
 }

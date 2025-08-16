@@ -1,7 +1,7 @@
 # CaixaHackathonBackend
 
-	   Simulador-Service (Hackathon VITEC)
-		   Microserviço desenvolvido em Quarkus para simulação de empréstimos, conforme desafio do Hackathon VITEC 2025.
+Simulador-Service (Hackathon VITEC)
+	Microserviço desenvolvido em Quarkus para simulação de empréstimos, conforme desafio do Hackathon VITEC 2025.
 
 ## Tecnologias Utilizadas
 	- Java 17
@@ -13,9 +13,10 @@
 	- SQL Server
 	- GitHub Actions (CI/CD)
 	- JUnit / Mockito
-	- Prometheus / Grafana
 	- Caffeine (Cache)
-	- Resilience4j (Circuit Breaker)
+	- MicroProfile Fault Tolerance (Circuit Breaker)
+
+	- Prometheus / Grafana	
 	- K6 (Teste de carga)
 
 ## Como Rodar o Projeto
@@ -88,3 +89,23 @@ O endpoint de simulação está protegido com:
 	- Build do projeto com Maven
 	
 	O workflow está definido em `.github/workflows/build.yml`.
+
+## Resiliência e Tolerância a Falhas
+
+	O serviço utiliza MicroProfile Fault Tolerance / Resilience4j para aumentar a confiabilidade:
+	
+	- `@CircuitBreaker`: evita sobrecarga em caso de falhas repetidas.
+	  - `@Fallback`: define um método alternativo caso a simulação falhe.
+	  - `@Retry`: tenta executar novamente operações temporariamente instáveis.
+	  - `@Timeout`: limita o tempo máximo de execução de uma requisição.
+	  - `@RateLimit`: controla o número de requisições para evitar abuso.
+	
+	Estas estratégias garantem que o serviço continue disponível mesmo diante de falhas temporárias ou alta carga.
+
+## Cache
+
+	O projeto utiliza **Caffeine Cache** para armazenar resultados de simulações em memória:
+	
+	- Reduz o tempo de resposta em chamadas repetidas.
+	  - Diminui o processamento desnecessário de cálculos.
+	  - Melhora o desempenho geral do serviço.
