@@ -2,6 +2,7 @@ package gov.caixa.simuladorservice.service;
 
 import gov.caixa.simuladorservice.dto.ResultadoSimulacaoDto;
 import gov.caixa.simuladorservice.dto.SimulacaoRequestDto;
+import gov.caixa.simuladorservice.dto.SimulacaoResponseDto;
 import gov.caixa.simuladorservice.entity.Produto;
 import gov.caixa.simuladorservice.producer.EventHubProducer;
 import gov.caixa.simuladorservice.repository.ProdutoRepository;
@@ -16,6 +17,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 @QuarkusTest
 class SimulacaoServiceTest {
@@ -31,7 +33,6 @@ class SimulacaoServiceTest {
 
     @Test
     void deveRetornarSimulacaoValida() {
-        // Preparar produto mock
         Produto produto = Produto.builder()
                 .coProduto(1)
                 .noProduto("Produto 1")
@@ -42,7 +43,6 @@ class SimulacaoServiceTest {
                 .vrMaximo(new BigDecimal("10000"))
                 .build();
 
-        // Mock do método listarTodos usando spy
         doReturn(List.of(produto)).when(produtoRepository).listarTodos();
 
         SimulacaoRequestDto request = new SimulacaoRequestDto();
@@ -56,24 +56,36 @@ class SimulacaoServiceTest {
         assertEquals("Produto 1", response.getDescricaoProduto());
     }
 
-
     @Test
-    void deveLancarExcecaoQuandoNenhumProdutoCompatível() {
-        // Retorna lista vazia para simular que nenhum produto atende aos critérios
-        doReturn(List.of()).when(produtoRepository).listarTodos();
-
+    void deveChamarFallbackQuandoFalha() {
         SimulacaoRequestDto request = new SimulacaoRequestDto();
-        request.setValorDesejado(new BigDecimal("5000"));
-        request.setPrazo(10);
+        request.setValorDesejado(BigDecimal.valueOf(1000));
+        request.setPrazo(12);
 
-        // Espera que lance IllegalArgumentException
-        assertThrows(IllegalArgumentException.class, () -> simulacaoService.simular(request));
+        // Simular falha no repositório
+        when(produtoRepository.listarTodos()).thenThrow(new RuntimeException());
+
+        SimulacaoResponseDto response = simulacaoService.simular(request);
+
+        assertEquals("Simulação indisponível no momento", response.getDescricaoProduto());
+        assertTrue(response.getResultadoSimulacao().isEmpty());
     }
 
     @Test
-    void deveCalcularSACCorretamente() throws Exception {
+    void deveCalcularSACCorretamente() {
+        Produto produto = Produto.builder()
+                .coProduto(1)
+                .noProduto("Produto 1")
+                .pcTaxaJuros(new BigDecimal("0.02"))
+                .nuMinimoMeses((short) 1)
+                .nuMaximoMeses((short) 12)
+                .vrMinimo(new BigDecimal("1000"))
+                .vrMaximo(new BigDecimal("10000"))
+                .build();
+
+        doReturn(List.of(produto)).when(produtoRepository).listarTodos();
+
         BigDecimal valor = new BigDecimal("1000");
-        BigDecimal taxa = new BigDecimal("0.02");
         int prazo = 5;
 
         ResultadoSimulacaoDto sac = simulacaoService.simular(
@@ -83,9 +95,9 @@ class SimulacaoServiceTest {
                 .findFirst()
                 .orElseThrow();
 
-        // Verifica quantidade de parcelas
         assertEquals(prazo, sac.getParcelas().size());
-        // Checagem simples do valor da primeira parcela
         assertEquals(new BigDecimal("200.00"), sac.getParcelas().get(0).getValorAmortizacao());
     }
+
+    // Removido teste que esperava IllegalArgumentException, pois o fallback intercepta a exceção
 }
