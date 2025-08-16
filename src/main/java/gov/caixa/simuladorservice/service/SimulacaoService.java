@@ -28,10 +28,6 @@ public class SimulacaoService {
     EventHubProducer eventHubProducer;
 
     public SimulacaoResponseDto simular(SimulacaoRequestDto request) {
-        // Validar entrada
-        if (request.getValorDesejado() == null || request.getPrazo() == null || request.getPrazo() <= 0) {
-            throw new IllegalArgumentException("Parâmetros inválidos: valorDesejado e prazo são obrigatórios.");
-        }
 
         // Buscar produto compatível
         Produto produto = produtoRepository.listarTodos().stream()
@@ -60,13 +56,13 @@ public class SimulacaoService {
         return response;
     }
 
-    private ResultadoSimulacaoDto calcularSAC(BigDecimal valor, BigDecimal taxa, int prazo) {
+    private ResultadoSimulacaoDto calcularSAC(BigDecimal valor, BigDecimal taxaMensal, int prazo) {
         List<ParcelaDto> parcelas = new ArrayList<>();
         BigDecimal amortizacao = valor.divide(BigDecimal.valueOf(prazo), 2, RoundingMode.HALF_UP);
 
         for (int i = 1; i <= prazo; i++) {
             BigDecimal saldoDevedor = valor.subtract(amortizacao.multiply(BigDecimal.valueOf(i - 1)));
-            BigDecimal juros = saldoDevedor.multiply(taxa).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal juros = saldoDevedor.multiply(taxaMensal).setScale(2, RoundingMode.HALF_UP);
             BigDecimal prestacao = amortizacao.add(juros);
             parcelas.add(ParcelaDto.builder()
                     .numero(i)
@@ -82,13 +78,11 @@ public class SimulacaoService {
                 .build();
     }
 
-    private ResultadoSimulacaoDto calcularPRICE(BigDecimal valor, BigDecimal taxa, int prazo) {
+    private ResultadoSimulacaoDto calcularPRICE(BigDecimal valor, BigDecimal taxaMensal, int prazo) {
         List<ParcelaDto> parcelas = new ArrayList<>();
 
         // Definir precisão e modo de arredondamento
         MathContext mc = new MathContext(15, RoundingMode.HALF_UP);
-
-        BigDecimal taxaMensal = taxa;
 
         // Cálculo do fator PRICE: (1 - (1 + i)^(-n))
         BigDecimal fator = BigDecimal.ONE.subtract(

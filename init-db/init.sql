@@ -1,8 +1,8 @@
 -- Criação do banco
-CREATE DATABASE hack;
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'hack')
+    CREATE DATABASE hack;
 GO
 
--- Usar o banco
 USE hack;
 GO
 

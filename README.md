@@ -9,9 +9,8 @@
 	- Docker / Docker Compose
 	- Swagger (OpenAPI)
 	- Bucket4j (Rate Limiting)
-	- SLF4J + Logback (Logging)
+	- SLF4J (Logging)
 	- SQL Server
-	- 
 	- GitHub Actions (CI/CD)
 	- JUnit / Mockito
 	- Prometheus / Grafana

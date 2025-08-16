@@ -1,6 +1,6 @@
 services:
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    build: .   # <--- usa o Dockerfile da raiz
     container_name: sqlserver-hack
     ports:
       - "1433:1433"
@@ -8,5 +8,15 @@ services:
       ACCEPT_EULA: "Y"
       SA_PASSWORD: "YourStrong!Passw0rd"
     volumes:
-      - ./init-db:/docker-entrypoint-initdb.d
+      - ./init-db:/init-db
+    command: >
+      /bin/bash -c "
+        /opt/mssql/bin/sqlservr &
+        pid=$!;
+        echo '⏳ Aguardando SQL Server iniciar...';
+        sleep 25;
+        echo '▶️ Executando init.sql...';
+        sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -i /init-db/init.sql;
+        wait $pid
+      "
     restart: always
