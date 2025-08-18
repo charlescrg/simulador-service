@@ -22,15 +22,15 @@ public class EventHubProducer {
                 .buildProducerClient();
     }
 
-    public void enviarEvento(String mensagemJson) {
-        String eventId = UUID.randomUUID().toString(); 
-
-        EventData eventData = new EventData(mensagemJson);
-        eventData.getProperties().put("eventId", eventId); 
-
-        producer.send(Collections.singletonList(eventData));
-
-        Logger.getLogger(EventHubProducer.class)
-              .infof("Evento enviado | eventId=%s | payload=%s", eventId, mensagemJson);
+    
+    public void enviarEvento(String mensagemJson, String correlationId) {
+            EventData eventData = new EventData(mensagemJson);
+            eventData.getProperties().put("correlationId", correlationId);
+    
+            producer.send(Collections.singletonList(eventData));
+    
+            Logger.getLogger(EventHubProducer.class)
+                  .infof("Evento enviado | correlationId=%s | payload=%s", correlationId, mensagemJson);
     }
+
 }
