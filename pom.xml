@@ -158,6 +158,11 @@
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-messaging-eventhubs</artifactId>
+      <version>5.14.0</version> 
+    </dependency>
 
   </dependencies>
   <build>
