@@ -150,7 +150,11 @@ public class SimulacaoResource {
     public Response simular(@Valid SimulacaoRequestDto request,
                             @Context UriInfo uriInfo,
                             @Context SecurityContext securityContext,
-                            @Context HttpHeaders headers) {
+                            @Context HttpHeaders headers, @HeaderParam("X-Correlation-Id") String correlationId) {
+
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = UUID.randomUUID().toString(); 
+        }
 
         // IP do cliente (primeiro verifica X-Forwarded-For)
         String ip = headers.getHeaderString("X-Forwarded-For");
@@ -176,7 +180,7 @@ public class SimulacaoResource {
         simulacaoCounter.increment();
 
             try {
-                SimulacaoResponseDto resposta = simulacaoService.simular(request);
+                SimulacaoResponseDto resposta = simulacaoService.simular(request, correlationId);
                 log.info("Simulação concluída com sucesso para usuário={}", usuario);
                 return Response.ok(resposta).build();
             } catch (Exception e) {
