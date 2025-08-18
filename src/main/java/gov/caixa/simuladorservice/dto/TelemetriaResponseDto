@@ -1,0 +1,46 @@
+package gov.caixa.simuladorservice.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Schema(name = "TelemetriaResponse", description = "Dados de telemetria por endpoint")
+public class TelemetriaResponseDto {
+
+    @Schema(description = "Data de referência", example = "2025-07-30")
+    private LocalDate dataReferencia;
+
+    @Schema(description = "Lista de endpoints monitorados")
+    private List<EndpointTelemetriaDto> listaEndpoints;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(name = "EndpointTelemetria", description = "Dados de telemetria de um endpoint")
+    public static class EndpointTelemetriaDto {
+        @Schema(description = "Nome da API", example = "Simulacao")
+        private String nomeApi;
+
+        @Schema(description = "Quantidade de requisições", example = "135")
+        private Integer qtdRequisicoes;
+
+        @Schema(description = "Tempo médio de resposta em milissegundos", example = "150")
+        private Integer tempoMedio;
+
+        @Schema(description = "Tempo mínimo de resposta em milissegundos", example = "23")
+        private Integer tempoMinimo;
+
+        @Schema(description = "Tempo máximo de resposta em milissegundos", example = "860")
+        private Integer tempoMaximo;
+
+        @Schema(description = "Percentual de sucesso", example = "0.98")
+        private Double percentualSucesso;
+    }
+}
