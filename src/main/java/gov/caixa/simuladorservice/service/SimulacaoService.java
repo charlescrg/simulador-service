@@ -57,7 +57,7 @@ public class SimulacaoService {
         response.setResultadoSimulacao(List.of(sac, price));
 
         // Enviar para EventHub
-        eventHubProducer.enviarEvento(response.toString());
+        eventHubProducer.enviarEvento(response.toString(), String correlationId);
         log.info("Simulação enviada para EventHub: {}", response);
 
         return response;
