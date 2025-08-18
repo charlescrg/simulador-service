@@ -180,6 +180,6 @@ public class SimulacaoResource {
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                         .entity("Erro interno ao processar a simulação").build();
             }
-        }
+        })
     }
 }
