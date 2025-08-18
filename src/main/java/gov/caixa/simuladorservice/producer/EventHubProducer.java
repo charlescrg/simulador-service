@@ -23,7 +23,14 @@ public class EventHubProducer {
     }
 
     public void enviarEvento(String mensagemJson) {
+        String eventId = UUID.randomUUID().toString(); 
+
         EventData eventData = new EventData(mensagemJson);
+        eventData.getProperties().put("eventId", eventId); 
+
         producer.send(Collections.singletonList(eventData));
+
+        Logger.getLogger(EventHubProducer.class)
+              .infof("Evento enviado | eventId=%s | payload=%s", eventId, mensagemJson);
     }
 }
