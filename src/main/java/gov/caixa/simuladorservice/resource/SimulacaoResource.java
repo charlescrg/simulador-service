@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 @Path("/api/v1/simulacao")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -37,6 +38,13 @@ public class SimulacaoResource {
     @Inject
     SimulacaoService simulacaoService;
 
+    @Inject
+    MeterRegistry registry;
+    
+    private final Timer simulacaoTimer;
+    private final Counter simulacaoCounter;
+    private final Counter simulacaoErroCounter;
+
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket resolveBucket(String ip) {
@@ -44,6 +52,23 @@ public class SimulacaoResource {
                 .addLimit(Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(1))))
                 .build());
     }
+
+    
+    @PostConstruct
+    void initMetrics() {
+        simulacaoTimer = Timer.builder("simulacao.tempo_resposta")
+            .description("Tempo de resposta da simulação")
+            .register(registry);
+
+        simulacaoCounter = Counter.builder("simulacao.total")
+            .description("Total de simulações realizadas")
+            .register(registry);
+
+        simulacaoErroCounter = Counter.builder("simulacao.erros")
+            .description("Total de erros na simulação")
+            .register(registry);
+    }
+
 
     @POST
     @Operation(summary = "Simula empréstimo com SAC e PRICE")
@@ -142,14 +167,19 @@ public class SimulacaoResource {
         log.info("Simulação solicitada por usuário={} IP={} valor={} prazo={}",
                 usuario, ip, request.getValorDesejado(), request.getPrazo());
 
-        try {
-            SimulacaoResponseDto resposta = simulacaoService.simular(request);
-            log.info("Simulação concluída com sucesso para usuário={}", usuario);
-            return Response.ok(resposta).build();
-        } catch (Exception e) {
-            log.error("Erro na simulação para usuário={} IP={}", usuario, ip, e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("Erro interno ao processar a simulação").build();
+        
+    return simulacaoTimer.record(() -> {
+        simulacaoCounter.increment();
+
+            try {
+                SimulacaoResponseDto resposta = simulacaoService.simular(request);
+                log.info("Simulação concluída com sucesso para usuário={}", usuario);
+                return Response.ok(resposta).build();
+            } catch (Exception e) {
+                log.error("Erro na simulação para usuário={} IP={}", usuario, ip, e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity("Erro interno ao processar a simulação").build();
+            }
         }
     }
 }
