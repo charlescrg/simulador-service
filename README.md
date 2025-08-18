@@ -15,7 +15,6 @@ Simulador-Service (Hackathon VITEC)
 	- JUnit / Mockito
 	- Caffeine (Cache)
 	- MicroProfile Fault Tolerance (Circuit Breaker)
-
 	- Prometheus / Grafana	
 	- K6 (Teste de carga)
 
@@ -117,18 +116,10 @@ O endpoint de simulação está protegido com:
 	- Prometheus
 		Prometheus coleta métricas da aplicação Quarkus expostas no endpoint /api/v1/telemetria.
 			- Essas métricas incluem tempo de resposta e volume de requisições.
+   		Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
+
 		   - Como usar:
 			 		docker-compose up -d
-
-   	- Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
-
-		Como usar:
-			Acesse o Grafana em: http://localhost:3000
-			Login padrão: admin / admin
-			Configure o Prometheus como Data Source (http://prometheus:9090)
-			Crie dashboards com métricas como:
-				simulacao_erros
-				simulacao_tempo_resposta
 		 
 ## Testes de Carga com K6
 
