@@ -197,4 +197,34 @@ public class SimulacaoResource {
             }
         });
     }
+    @GET
+    @Path("/todas")
+    @Operation(summary = "Lista todas as simulações realizadas")
+    @APIResponse(
+        responseCode = "200",
+        description = "Lista de simulações realizadas",
+        content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = ListaSimulacoesResponseDto.class))
+    )
+    @APIResponse(
+        responseCode = "500",
+        description = "Erro interno ao listar simulações",
+        content = @Content(mediaType = "application/json")
+    )
+    @Authenticated
+    public Response listarTodasSimulacoes() {
+        return listarSimulacoesTimer.record(() -> {
+            listarSimulacoesCounter.increment();
+            try {
+                ListaSimulacoesResponseDto resposta = simulacaoService.listarTodasSimulacoes();
+                return Response.ok(resposta).build();
+            } catch (Exception e) {
+                listarSimulacoesErroCounter.increment();
+                log.error("Erro ao listar simulações", e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity("Erro ao listar simulações").build();
+            }
+        });
+    }
+
 }
