@@ -1,15 +1,29 @@
 package gov.caixa.simuladorservice.producer;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import org.jboss.logging.Logger;
+import com.azure.messaging.eventhubs.EventHubProducerClient;
+import com.azure.messaging.eventhubs.EventHubClientBuilder;
+import com.azure.messaging.eventhubs.EventData;
+
+import javax.enterprise.context.ApplicationScoped;
+import java.util.Collections;
 
 @ApplicationScoped
 public class EventHubProducer {
 
-    private static final Logger LOG = Logger.getLogger(EventHubProducer.class);
+    @Inject
+    @ConfigProperty(name = "eventhub.connection-string")
+    String connectionString;
+
+    private final EventHubProducerClient producer;
+
+    public EventHubProducer() {
+        producer = new EventHubClientBuilder()
+                .connectionString(connectionString)
+                .buildProducerClient();
+    }
 
     public void enviarEvento(String mensagemJson) {
-        // Aqui iria a integração real com Azure EventHub
-        LOG.info("Evento enviado para EventHub: " + mensagemJson);
+        EventData eventData = new EventData(mensagemJson);
+        producer.send(Collections.singletonList(eventData));
     }
 }
