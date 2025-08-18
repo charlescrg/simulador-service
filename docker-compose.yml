@@ -8,7 +8,7 @@ services:
       - "1433:1433"
     environment:
       ACCEPT_EULA: "Y"
-      SA_PASSWORD: "YourStrong!Passw0rd"
+      SA_PASSWORD: "Password23"
     volumes:
       - ./init-db:/init-db
     command: >
@@ -18,7 +18,7 @@ services:
         echo '⏳ Aguardando SQL Server iniciar...';
         sleep 25;
         echo '▶️ Executando init.sql...';
-        sqlcmd -S localhost -U sa -P YourStrong!Passw0rd -i /init-db/init.sql;
+        sqlcmd -S localhost -U hack -P Password23 -i /init-db/init.sql;
         wait $pid
       "
     restart: always
@@ -43,3 +43,22 @@ services:
 
 volumes:
   grafana-storage:
+
+# -------------------------------------------------------------------
+# 🔒 Configuração alternativa para ambiente de produção (comentada)
+# Descomente para conectar à instância externa do SQL Server
+#
+# services:
+#   app:
+#     image: your-app-image
+#     ports:
+#       - "8080:8080"
+#     environment:
+#       DB_HOST: dbhackathon.database.windows.net
+#       DB_PORT: "1433"
+#       DB_NAME: hack
+#       DB_USER: hack
+#       DB_PASSWORD: Password23
+#       DB_TABLE: dbo.Produto
+# -------------------------------------------------------------------
+
