@@ -150,7 +150,14 @@ public class SimulacaoResource {
     public Response simular(@Valid SimulacaoRequestDto request,
                             @Context UriInfo uriInfo,
                             @Context SecurityContext securityContext,
-                            @Context HttpHeaders headers, @HeaderParam("X-Correlation-Id") String correlationId) {
+                            @Context HttpHeaders headers, 
+                            @Parameter(
+                                    name = "X-Correlation-Id",
+                                    description = "Identificador único para rastreamento da requisição",
+                                    required = false,
+                                    in = ParameterIn.HEADER
+                            )
+                            @HeaderParam("X-Correlation-Id") String correlationId) {
 
         if (correlationId == null || correlationId.isBlank()) {
             correlationId = UUID.randomUUID().toString(); 
@@ -172,8 +179,8 @@ public class SimulacaoResource {
                     .build();
         }
 
-        log.info("Simulação solicitada por usuário={} IP={} valor={} prazo={}",
-                usuario, ip, request.getValorDesejado(), request.getPrazo());
+        log.info("Simulação solicitada por: usuário={}, IP={}, valor={}, prazo={}, correlationId={}",
+                usuario, ip, request.getValorDesejado(), request.getPrazo(),correlationId);
 
         
     return simulacaoTimer.record(() -> {
