@@ -58,7 +58,7 @@ public class SimulacaoService {
 
         // Enviar para EventHub
         eventHubProducer.enviarEvento(response.toString(), String correlationId);
-        log.info("Simulação enviada para EventHub: {}", response);
+        log.infof("Evento enviado para EventHub | correlationId=%s | payload=%s", correlationId, response);
 
         return response;
     }
@@ -119,11 +119,19 @@ public class SimulacaoService {
                 .parcelas(parcelas)
                 .build();
     }
-    public SimulacaoResponseDto simularFallback(SimulacaoRequestDto request) {
+    public SimulacaoResponseDto simularFallback(SimulacaoRequestDto request, String correlationId) {
+    
+        Logger.getLogger(SimulacaoService.class)
+              .warnf("Fallback acionado | correlationId=%s | dados=%s", correlationId, request);
+    
+        // TODO: Aqui você poderia salvar a requisição em uma fila para reprocessamento posterior
+    
         SimulacaoResponseDto fallback = new SimulacaoResponseDto();
-        fallback.setDescricaoProduto("Simulação indisponível no momento");
+        fallback.setDescricaoProduto("Simulação indisponível no momento. Sua solicitação será reprocessada.");
         fallback.setResultadoSimulacao(Collections.emptyList());
+    
         return fallback;
     }
+
 
 }
