@@ -109,3 +109,43 @@ O endpoint de simulação está protegido com:
 	- Reduz o tempo de resposta em chamadas repetidas.
 	  - Diminui o processamento desnecessário de cálculos.
 	  - Melhora o desempenho geral do serviço.
+
+## Monitoramento 
+
+	Este projeto inclui uma infraestrutura de observabilidade utilizando Prometheus e Grafana.
+	
+	- Prometheus
+		Prometheus coleta métricas da aplicação Quarkus expostas no endpoint /api/v1/telemetria.
+			- Essas métricas incluem tempo de resposta e volume de requisições.
+		   - Como usar:
+			 		docker-compose up -d
+
+   	- Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
+
+		Como usar:
+			Acesse o Grafana em: http://localhost:3000
+			Login padrão: admin / admin
+			Configure o Prometheus como Data Source (http://prometheus:9090)
+			Crie dashboards com métricas como:
+				simulacao_erros
+				simulacao_tempo_resposta
+		 
+## Testes de Carga com K6
+
+	Este projeto inclui um script de teste de carga usando K6, localizado na raiz como `k6_test_script.js`.
+
+### Como executar:
+
+1. Instale o K6:
+   - macOS: `brew install k6`
+   - Windows: `choco install k6`
+   - Linux: veja documentação oficial
+
+2. Execute o teste:
+   ```bash
+   k6 run k6_test_script.js
+   ```
+
+ 		
+
+ 
