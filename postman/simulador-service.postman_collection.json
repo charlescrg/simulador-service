@@ -1,16 +1,16 @@
 {
 	"info": {
-		"_postman_id": "fccef794-26da-4e6f-990f-042dd45791bc",
+		"_postman_id": "10abc81e-ebd4-4dec-a3d6-9922f588fccf",
 		"name": "simulador-service",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "21930656"
+		"_exporter_id": "40022416"
 	},
 	"item": [
 		{
 			"name": "Local",
 			"item": [
 				{
-					"name": "simular emprestimo",
+					"name": "Criar Simulação",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -35,13 +35,14 @@
 							"raw": "{\r\n  \"valorDesejado\": 1000.00,\r\n  \"prazo\": 2\r\n}\r\n"
 						},
 						"url": {
-							"raw": "{{baseURL}}/api/simulacao",
+							"raw": "{{baseURL}}/api/v1/simulacoes",
 							"host": [
 								"{{baseURL}}"
 							],
 							"path": [
 								"api",
-								"simulacao"
+								"v1",
+								"simulacoes"
 							]
 						}
 					},
