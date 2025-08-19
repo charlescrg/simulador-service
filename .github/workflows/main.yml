@@ -62,12 +62,16 @@ jobs:
 
       - name: Criar banco de dados
         run: |
-          sleep 30
-          /opt/mssql-tools/bin/sqlcmd -S localhost -U hack -P Password23 -Q "CREATE DATABASE hack"
+          for i in {1..30}; do
+            /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password23 -Q "SELECT 1" && break
+            echo "Aguardando SQL Server..."
+            sleep 2
+          done
+          /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password23 -i init-db/init.sql
 
       - name: Executar script init.sql
         run: |
-          /opt/mssql-tools/bin/sqlcmd -S localhost -U hack -P Password23 -d hack -i init-db/init.sql
+          /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password23 -d hack -i init-db/init.sql
 
       - name: Build com Maven
         run: mvn clean verify -Dquarkus.analytics.enabled=false
