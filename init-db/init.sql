@@ -1,8 +1,3 @@
--- Criação do banco
-IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'hack')
-    CREATE DATABASE hack;
-GO
-
 -- Criar login se não existir
 IF NOT EXISTS (SELECT * FROM sys.server_principals WHERE name = 'hack')
     CREATE LOGIN hack WITH PASSWORD = 'Password23';
@@ -13,6 +8,7 @@ IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'hack')
     CREATE DATABASE hack;
 GO
 
+-- Usar o banco hack
 USE hack;
 GO
 
@@ -21,9 +17,10 @@ IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'hack')
     CREATE USER hack FOR LOGIN hack;
 GO
 
--- Conceder permissões básicas
+-- Conceder permissões de db_owner ao usuário hack
 ALTER ROLE db_owner ADD MEMBER hack;
 GO
+
 
 -- Criar tabela
 CREATE TABLE dbo.PRODUTO ( CO_PRODUTO int NOT NULL primary key, NO_PRODUTO varchar(200) NOT NULL, PC_TAXA_JUROS numeric(10, 9) NOT NULL, NU_MINIMO_MESES smallint NOT NULL, NU_MAXIMO_MESES smallint NULL, VR_MINIMO numeric(18, 2) NOT NULL, VR_MAXIMO numeric(18, 2) NULL );
