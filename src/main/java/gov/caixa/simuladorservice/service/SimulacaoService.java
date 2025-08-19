@@ -3,6 +3,7 @@ package gov.caixa.simuladorservice.service;
 import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.entity.Produto;
 import gov.caixa.simuladorservice.entity.Simulacao;
+import gov.caixa.simuladorservice.entity.SimulacaoTipo;
 import gov.caixa.simuladorservice.producer.EventHubProducer;
 import gov.caixa.simuladorservice.repository.ProdutoRepository;
 import gov.caixa.simuladorservice.repository.SimulacaoRepository;
@@ -68,15 +69,23 @@ public class SimulacaoService {
                 .map(ParcelaDto::getValorPrestacao)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Cria a simulação sem os tipos
         Simulacao simulacao = Simulacao.builder()
                 .produto(produto.getNoProduto())
                 .dataSimulacao(LocalDate.now())
                 .valorSimulado(request.getValorDesejado())
-                .prazo(request.getPrazo())
-                .valorTotalParcelasSac(valorTotalParcelasSac)
-                .valorTotalParcelasPrice(valorTotalParcelasPrice)
+                .valorTotalCredito(request.getValorDesejado()) // ou outro valor calculado
                 .tempoRespostaMs(System.currentTimeMillis() - inicio)
                 .build();
+
+        // Cria os tipos de simulação e associa à simulação
+        List<SimulacaoTipo> tipos = List.of(
+                new SimulacaoTipo(null, "SAC", valorTotalParcelasSac, simulacao, sac.getParcelas().stream().map(ParcelaDto::getValorPrestacao).reduce(BigDecimal.ZERO, BigDecimal::add), produto.getPcTaxaJuros(), BigDecimal.valueOf(request.getPrazo())),
+                new SimulacaoTipo(null, "PRICE", valorTotalParcelasPrice, simulacao, price.getParcelas().stream().map(ParcelaDto::getValorPrestacao).reduce(BigDecimal.ZERO, BigDecimal::add), produto.getPcTaxaJuros(), BigDecimal.valueOf(request.getPrazo()))
+        );
+
+        // Adiciona os tipos à simulação
+        simulacao.setTipos(tipos);
 
         simulacaoRepository.salvar(simulacao);
 
@@ -235,8 +244,8 @@ public class SimulacaoService {
             SimulacaoResumoDto dto = new SimulacaoResumoDto();
             dto.setIdSimulacao(simulacao.getId().intValue());
             dto.setValorDesejado(simulacao.getValorSimulado());
-            dto.setPrazo(simulacao.getPrazo());
-            dto.setValorTotalParcelas(simulacao.getValorTotalParcelas());
+            //dto.setPrazo(simulacao.getPrazo());
+            //dto.setValorTotalParcelas(simulacao.getValorTotalParcelas());
             return dto;
         }).collect(Collectors.toList());
 
