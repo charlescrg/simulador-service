@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "SIMULACAO", schema = "dbo")
@@ -38,17 +39,45 @@ public class Simulacao {
     @Schema(description = "Tempo de resposta da simulação em milissegundos", example = "120")
     private Long tempoRespostaMs;
 
+    // Campos gerais
     @Column(name = "VALOR_TOTAL_CREDITO")
     @Schema(description = "Valor total de crédito calculado na simulação", example = "16000.00")
     private BigDecimal valorTotalCredito;
 
-    @Column(name = "VALOR_MEDIO_PRESTACAO")
-    @Schema(description = "Valor médio da prestação calculada", example = "800.00")
-    private BigDecimal valorMedioPrestacao;
+    // SAC
+    @Column(name = "VALOR_TOTAL_PARCELAS_SAC")
+    @Schema(description = "Valor total das parcelas para o tipo SAC", example = "15500.00")
+    private BigDecimal valorTotalParcelasSac;
 
-    @Column(name = "TAXA_JURO")
-    @Schema(description = "Taxa de juros aplicada na simulação", example = "0.0179")
-    private BigDecimal taxaJuro;
+    @Column(name = "VALOR_MEDIO_PRESTACAO_SAC")
+    @Schema(description = "Valor médio da prestação SAC", example = "800.00")
+    private BigDecimal valorMedioPrestacaoSac;
+
+    @Column(name = "TAXA_JURO_SAC")
+    @Schema(description = "Taxa de juros SAC", example = "0.0179")
+    private BigDecimal taxaJuroSac;
+
+    @Column(name = "PRAZO_SAC")
+    @Schema(description = "Prazo em meses para pagamento SAC", example = "12")
+    private Integer prazoSac;
+
+    // PRICE
+    @Column(name = "VALOR_TOTAL_PARCELAS_PRICE")
+    @Schema(description = "Valor total das parcelas para o tipo PRICE", example = "15800.00")
+    private BigDecimal valorTotalParcelasPrice;
+
+    @Column(name = "VALOR_MEDIO_PRESTACAO_PRICE")
+    @Schema(description = "Valor médio da prestação PRICE", example = "820.00")
+    private BigDecimal valorMedioPrestacaoPrice;
+
+    @Column(name = "TAXA_JURO_PRICE")
+    @Schema(description = "Taxa de juros PRICE", example = "0.0179")
+    private BigDecimal taxaJuroPrice;
+
+    @Column(name = "PRAZO_PRICE")
+    @Schema(description = "Prazo em meses para pagamento PRICE", example = "12")
+    private Integer prazoPrice;
+
+    @OneToMany(mappedBy = "simulacao", cascade = CascadeType.ALL)
+    private List<SimulacaoTipo> tipos;
 }
-
-
