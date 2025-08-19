@@ -18,8 +18,4 @@ public class ProdutoRepository implements GenericRepository<Produto, Integer> {
         TypedQuery<Produto> query = em.createQuery("SELECT p FROM Produto p", Produto.class);
         return query.getResultList();
     }
-
-    public Produto buscarPorCodigo(Long codigoProduto) {
-        return em.find(Produto.class, codigoProduto);
-    }
 }

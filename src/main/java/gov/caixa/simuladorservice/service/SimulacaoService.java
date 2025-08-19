@@ -1,9 +1,6 @@
 package gov.caixa.simuladorservice.service;
 
-import gov.caixa.simuladorservice.dto.ParcelaDto;
-import gov.caixa.simuladorservice.dto.ResultadoSimulacaoDto;
-import gov.caixa.simuladorservice.dto.SimulacaoRequestDto;
-import gov.caixa.simuladorservice.dto.SimulacaoResponseDto;
+import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.entity.Produto;
 import gov.caixa.simuladorservice.producer.EventHubProducer;
 import gov.caixa.simuladorservice.repository.ProdutoRepository;
@@ -17,9 +14,12 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @ApplicationScoped
@@ -31,10 +31,14 @@ public class SimulacaoService {
     @Inject
     EventHubProducer eventHubProducer;
 
+    private final List<SimulacaoProdutoDto> simulacoesRealizadas = Collections.synchronizedList(new ArrayList<>());
+    private final List<SimulacaoResumoDto> simulacoesHistorico = Collections.synchronizedList(new ArrayList<>());
+
+
     @CacheResult(cacheName = "simulacoes")
     @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 1, delay = 5000)
     @Fallback(fallbackMethod = "simularFallback")
-    public SimulacaoResponseDto simular(SimulacaoRequestDto request) {
+    public SimulacaoResponseDto simular(SimulacaoRequestDto request, String correlationId) {
 
         // Buscar produto compatível
         Produto produto = produtoRepository.listarTodos().stream()
@@ -57,8 +61,63 @@ public class SimulacaoService {
         response.setResultadoSimulacao(List.of(sac, price));
 
         // Enviar para EventHub
-        eventHubProducer.enviarEvento(response.toString(), String correlationId);
-        log.infof("Evento enviado para EventHub | correlationId=%s | payload=%s", correlationId, response);
+        eventHubProducer.enviarEvento(response.toString(), correlationId);
+        log.info(String.format("Evento enviado para EventHub | correlationId=%s | payload=%s", correlationId, response));
+
+
+        //
+
+        SimulacaoProdutoDto produtoSimulado = new SimulacaoProdutoDto();
+        produtoSimulado.setCodigoProduto(produto.getCoProduto());
+        produtoSimulado.setDescricaoProduto(produto.getNoProduto());
+        produtoSimulado.setTaxaMediaJuro(produto.getPcTaxaJuros());
+
+        // Valor médio da prestação considerando SAC e PRICE
+                BigDecimal valorMedioPrestacao = (sac.getParcelas().stream()
+                        .map(ParcelaDto::getValorPrestacao)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .add(
+                                price.getParcelas().stream()
+                                        .map(ParcelaDto::getValorPrestacao)
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        ))
+                        .divide(BigDecimal.valueOf(2), 2, RoundingMode.HALF_UP);
+
+                produtoSimulado.setValorMedioPrestacao(valorMedioPrestacao);
+
+        // Valor total desejado é o valor que o cliente solicitou
+                produtoSimulado.setValorTotalDesejado(request.getValorDesejado());
+
+        // Valor total de crédito = soma das amortizações de SAC e PRICE
+                BigDecimal valorTotalCredito = sac.getParcelas().stream()
+                        .map(ParcelaDto::getValorAmortizacao)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .add(
+                                price.getParcelas().stream()
+                                        .map(ParcelaDto::getValorAmortizacao)
+                                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        );
+
+                produtoSimulado.setValorTotalCredito(valorTotalCredito);
+
+        // Adicionar na lista
+                simulacoesRealizadas.add(produtoSimulado);
+
+//
+
+
+        SimulacaoResumoDto resumo = new SimulacaoResumoDto();
+        resumo.setIdSimulacao((int) (System.currentTimeMillis() % Integer.MAX_VALUE));
+        resumo.setValorDesejado(request.getValorDesejado());
+        resumo.setPrazo(request.getPrazo());
+        resumo.setValorTotalParcelas(
+                sac.getParcelas().stream()
+                        .map(ParcelaDto::getValorPrestacao)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+        );
+        simulacoesHistorico.add(resumo);
+
+    //
 
         return response;
     }
@@ -120,10 +179,9 @@ public class SimulacaoService {
                 .build();
     }
     public SimulacaoResponseDto simularFallback(SimulacaoRequestDto request, String correlationId) {
-    
-        Logger.getLogger(SimulacaoService.class)
-              .warnf("Fallback acionado | correlationId=%s | dados=%s", correlationId, request);
-    
+
+        log.warn(String.format("Fallback acionado | correlationId=%s | dados=%s", correlationId, request));
+
         // TODO: Aqui você poderia salvar a requisição em uma fila para reprocessamento posterior
     
         SimulacaoResponseDto fallback = new SimulacaoResponseDto();
@@ -132,6 +190,79 @@ public class SimulacaoService {
     
         return fallback;
     }
+
+    public List<VolumeSimuladoResponseDto> listarValoresPorProdutoDia() {
+
+        // Agrupar por data (hoje, já que não temos data de cada simulação) e por código do produto
+        Map<LocalDate, Map<Integer, List<SimulacaoProdutoDto>>> agrupado =
+                simulacoesRealizadas.stream()
+                        .collect(Collectors.groupingBy(
+                                s -> LocalDate.now(),
+                                Collectors.groupingBy(SimulacaoProdutoDto::getCodigoProduto)
+                        ));
+
+        List<VolumeSimuladoResponseDto> response = new ArrayList<>();
+
+        for (Map.Entry<LocalDate, Map<Integer, List<SimulacaoProdutoDto>>> entryData : agrupado.entrySet()) {
+            LocalDate data = entryData.getKey();
+            Map<Integer, List<SimulacaoProdutoDto>> porProduto = entryData.getValue();
+
+            List<SimulacaoProdutoDto> simulacoesPorProduto = new ArrayList<>();
+
+            for (Map.Entry<Integer, List<SimulacaoProdutoDto>> entryProduto : porProduto.entrySet()) {
+                Integer codigoProduto = entryProduto.getKey();
+                List<SimulacaoProdutoDto> simulacoesProduto = entryProduto.getValue();
+
+                // Agregar valores
+                BigDecimal taxaMediaJuro = simulacoesProduto.stream()
+                        .map(SimulacaoProdutoDto::getTaxaMediaJuro)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(simulacoesProduto.size()), 9, RoundingMode.HALF_UP);
+
+                BigDecimal valorTotalDesejado = simulacoesProduto.stream()
+                        .map(SimulacaoProdutoDto::getValorTotalDesejado)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                BigDecimal valorMedioPrestacao = simulacoesProduto.stream()
+                        .map(SimulacaoProdutoDto::getValorMedioPrestacao)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(simulacoesProduto.size()), 2, RoundingMode.HALF_UP);
+
+                BigDecimal valorTotalCredito = simulacoesProduto.stream()
+                        .map(SimulacaoProdutoDto::getValorTotalCredito)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                String descricaoProduto = simulacoesProduto.get(0).getDescricaoProduto();
+
+                SimulacaoProdutoDto dto = new SimulacaoProdutoDto();
+                dto.setCodigoProduto(codigoProduto);
+                dto.setDescricaoProduto(descricaoProduto);
+                dto.setTaxaMediaJuro(taxaMediaJuro);
+                dto.setValorTotalDesejado(valorTotalDesejado);
+                dto.setValorTotalCredito(valorTotalCredito);
+                dto.setValorMedioPrestacao(valorMedioPrestacao);
+
+                simulacoesPorProduto.add(dto);
+            }
+
+            VolumeSimuladoResponseDto volumeDto = new VolumeSimuladoResponseDto();
+            volumeDto.setDataReferencia(data);
+            volumeDto.setSimulacoes(simulacoesPorProduto);
+
+            response.add(volumeDto);
+        }
+
+        return response;
+    }
+    public ListaSimulacoesResponseDto listarSimulacoes() {
+        ListaSimulacoesResponseDto response = new ListaSimulacoesResponseDto();
+        response.setPagina(1);
+        response.setQtdRegistros(simulacoesHistorico.size());
+        response.setQtdRegistrosPagina(simulacoesHistorico.size());
+        response.setRegistros(new ArrayList<>(simulacoesHistorico));
+        return response;
+    }
+
 
 
 }

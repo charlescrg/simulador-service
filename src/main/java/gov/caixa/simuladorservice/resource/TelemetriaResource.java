@@ -29,37 +29,29 @@ public class TelemetriaResource {
 
     private Timer simulacaoTimer;
     private Counter simulacaoCounter;
-    private Counter simulacaoErroCounter;
 
     private Timer listarSimulacoesTimer;
     private Counter listarSimulacoesCounter;
-    private Counter listarSimulacoesErroCounter;
 
     private Timer volumeSimuladoTimer;
     private Counter volumeSimuladoCounter;
-    private Counter volumeSimuladoErroCounter;
 
     private Timer telemetriaConsultaTimer;
     private Counter telemetriaConsultaCounter;
-    private Counter telemetriaConsultaErroCounter;
 
     @PostConstruct
     void initMetrics() {
         simulacaoTimer = registry.find("simulacao.tempo_resposta").timer();
         simulacaoCounter = registry.find("simulacao.total").counter();
-        simulacaoErroCounter = registry.find("simulacao.erros").counter();
 
         listarSimulacoesTimer = registry.find("listar_simulacoes.tempo_resposta").timer();
         listarSimulacoesCounter = registry.find("listar_simulacoes.total").counter();
-        listarSimulacoesErroCounter = registry.find("listar_simulacoes.erros").counter();
 
         volumeSimuladoTimer = registry.find("volume_simulado.tempo_resposta").timer();
         volumeSimuladoCounter = registry.find("volume_simulado.total").counter();
-        volumeSimuladoErroCounter = registry.find("volume_simulado.erros").counter();
 
         telemetriaConsultaTimer = registry.find("telemetria_consulta.tempo_resposta").timer();
         telemetriaConsultaCounter = registry.find("telemetria_consulta.total").counter();
-        telemetriaConsultaErroCounter = registry.find("telemetria_consulta.erros").counter();
     }
 
     @GET
@@ -73,22 +65,18 @@ public class TelemetriaResource {
         return Map.of(
             "simulacao", Map.of(
                 "total", simulacaoCounter != null ? simulacaoCounter.count() : 0,
-                "erros", simulacaoErroCounter != null ? simulacaoErroCounter.count() : 0,
                 "tempoMedioMs", simulacaoTimer != null ? simulacaoTimer.mean(TimeUnit.MILLISECONDS) : 0
             ),
             "listarSimulacoes", Map.of(
                 "total", listarSimulacoesCounter != null ? listarSimulacoesCounter.count() : 0,
-                "erros", listarSimulacoesErroCounter != null ? listarSimulacoesErroCounter.count() : 0,
                 "tempoMedioMs", listarSimulacoesTimer != null ? listarSimulacoesTimer.mean(TimeUnit.MILLISECONDS) : 0
             ),
             "volumeSimulado", Map.of(
                 "total", volumeSimuladoCounter != null ? volumeSimuladoCounter.count() : 0,
-                "erros", volumeSimuladoErroCounter != null ? volumeSimuladoErroCounter.count() : 0,
                 "tempoMedioMs", volumeSimuladoTimer != null ? volumeSimuladoTimer.mean(TimeUnit.MILLISECONDS) : 0
             ),
             "telemetriaConsulta", Map.of(
                 "total", telemetriaConsultaCounter != null ? telemetriaConsultaCounter.count() : 0,
-                "erros", telemetriaConsultaErroCounter != null ? telemetriaConsultaErroCounter.count() : 0,
                 "tempoMedioMs", telemetriaConsultaTimer != null ? telemetriaConsultaTimer.mean(TimeUnit.MILLISECONDS) : 0
             )
         );

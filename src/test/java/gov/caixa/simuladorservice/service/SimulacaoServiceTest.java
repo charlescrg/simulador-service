@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doReturn;
@@ -49,11 +50,14 @@ class SimulacaoServiceTest {
         request.setValorDesejado(new BigDecimal("5000"));
         request.setPrazo(10);
 
-        var response = simulacaoService.simular(request);
+        String correlationId = UUID.randomUUID().toString();
+
+        SimulacaoResponseDto response = simulacaoService.simular(request, correlationId);
 
         assertNotNull(response);
         assertEquals(1L, response.getCodigoProduto());
         assertEquals("Produto 1", response.getDescricaoProduto());
+        assertFalse(response.getResultadoSimulacao().isEmpty());
     }
 
     @Test
@@ -62,12 +66,12 @@ class SimulacaoServiceTest {
         request.setValorDesejado(BigDecimal.valueOf(1000));
         request.setPrazo(12);
 
-        // Simular falha no repositório
         when(produtoRepository.listarTodos()).thenThrow(new RuntimeException());
 
-        SimulacaoResponseDto response = simulacaoService.simular(request);
+        String correlationId = UUID.randomUUID().toString();
+        SimulacaoResponseDto response = simulacaoService.simular(request, correlationId);
 
-        assertEquals("Simulação indisponível no momento", response.getDescricaoProduto());
+        assertEquals("Simulação indisponível no momento. Sua solicitação será reprocessada.", response.getDescricaoProduto());
         assertTrue(response.getResultadoSimulacao().isEmpty());
     }
 
@@ -87,10 +91,14 @@ class SimulacaoServiceTest {
 
         BigDecimal valor = new BigDecimal("1000");
         int prazo = 5;
+        SimulacaoRequestDto request = new SimulacaoRequestDto();
+        request.setValorDesejado(valor);
+        request.setPrazo(prazo);
 
-        ResultadoSimulacaoDto sac = simulacaoService.simular(
-                        new SimulacaoRequestDto(valor, prazo)
-                ).getResultadoSimulacao().stream()
+        String correlationId = UUID.randomUUID().toString();
+
+        ResultadoSimulacaoDto sac = simulacaoService.simular(request, correlationId)
+                .getResultadoSimulacao().stream()
                 .filter(r -> "SAC".equals(r.getTipo()))
                 .findFirst()
                 .orElseThrow();
@@ -98,6 +106,4 @@ class SimulacaoServiceTest {
         assertEquals(prazo, sac.getParcelas().size());
         assertEquals(new BigDecimal("200.00"), sac.getParcelas().get(0).getValorAmortizacao());
     }
-
-    // Removido teste que esperava IllegalArgumentException, pois o fallback intercepta a exceção
 }

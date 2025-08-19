@@ -1,10 +1,13 @@
 package gov.caixa.simuladorservice.producer;
 
-import com.azure.messaging.eventhubs.EventHubProducerClient;
-import com.azure.messaging.eventhubs.EventHubClientBuilder;
 import com.azure.messaging.eventhubs.EventData;
+import com.azure.messaging.eventhubs.EventHubClientBuilder;
+import com.azure.messaging.eventhubs.EventHubProducerClient;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
 import java.util.Collections;
 
 @ApplicationScoped
