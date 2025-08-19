@@ -1,0 +1,44 @@
+package gov.caixa.simuladorservice.entity;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SimulacaoTipo {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
+    @Schema(description = "Identificador do tipo de simulação")
+    private Long id;
+
+    @Column(name = "TIPO_SIMULACAO", nullable = false)
+    @Schema(description = "Tipo de simulação: SAC ou PRICE")
+    private String tipoSimulacao;
+
+    @Column(name = "VALOR_TOTAL_PARCELAS", nullable = false)
+    @Schema(description = "Valor total das parcelas")
+    private BigDecimal valorTotalParcelas;
+
+    @ManyToOne
+    @JoinColumn(name = "SIMULACAO_ID", nullable = false)
+    @Schema(description = "Simulação associada")
+    private Simulacao simulacao;
+
+    @Column(name = "VALOR_MEDIO_PRESTACAO")
+    private BigDecimal valorMedioPrestacao;
+
+    @Column(name = "TAXA_JURO")
+    private BigDecimal taxaJuro;
+
+    @Column(name = "PRAZO")
+    private BigDecimal prazo;
+}
