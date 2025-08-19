@@ -65,7 +65,7 @@ public class SimulacaoService {
         log.info(String.format("Evento enviado para EventHub | correlationId=%s | payload=%s", correlationId, response));
 
 
-        //
+        // TODO: refatorar
 
         SimulacaoProdutoDto produtoSimulado = new SimulacaoProdutoDto();
         produtoSimulado.setCodigoProduto(produto.getCoProduto());
