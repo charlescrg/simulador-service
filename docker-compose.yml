@@ -18,7 +18,7 @@ services:
         echo '⏳ Aguardando SQL Server iniciar...';
         sleep 25;
         echo '▶️ Executando init.sql...';
-        sqlcmd -S localhost -U hack -P Password23 -i /init-db/init.sql;
+        sqlcmd -S localhost -U SA -P Password23 -i /init-db/init.sql;
         wait $pid
       "
     restart: always

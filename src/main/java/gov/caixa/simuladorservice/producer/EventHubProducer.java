@@ -3,37 +3,69 @@ package gov.caixa.simuladorservice.producer;
 import com.azure.messaging.eventhubs.EventData;
 import com.azure.messaging.eventhubs.EventHubClientBuilder;
 import com.azure.messaging.eventhubs.EventHubProducerClient;
+import com.azure.core.amqp.exception.AmqpException;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.util.Collections;
 
 @ApplicationScoped
 public class EventHubProducer {
 
+    private static final Logger LOG = Logger.getLogger(EventHubProducer.class);
+
     @Inject
     @ConfigProperty(name = "eventhub.connection-string")
     String connectionString;
 
-    private final EventHubProducerClient producer;
+    private EventHubProducerClient producer;
 
-    public EventHubProducer() {
-        producer = new EventHubClientBuilder()
-                .connectionString(connectionString)
-                .buildProducerClient();
+    @PostConstruct
+    void init() {
+        try {
+            producer = new EventHubClientBuilder()
+                    .connectionString(connectionString)
+                    .buildProducerClient();
+            LOG.info("EventHubProducer inicializado com sucesso");
+        } catch (Exception e) {
+            LOG.error("Falha ao inicializar EventHubProducer", e);
+            producer = null; // evita NullPointerException ao enviar eventos
+        }
     }
 
-    
     public void enviarEvento(String mensagemJson, String correlationId) {
+        if (producer == null) {
+            LOG.warnf("EventHubProducer não inicializado, evento não enviado | correlationId=%s", correlationId);
+            return;
+        }
+
+        try {
             EventData eventData = new EventData(mensagemJson);
             eventData.getProperties().put("correlationId", correlationId);
-    
+
             producer.send(Collections.singletonList(eventData));
-    
-            Logger.getLogger(EventHubProducer.class)
-                  .infof("Evento enviado | correlationId=%s | payload=%s", correlationId, mensagemJson);
+
+            LOG.infof("Evento enviado | correlationId=%s | payload=%s", correlationId, mensagemJson);
+        } catch (AmqpException e) {
+            LOG.warnf(e, "Falha ao enviar evento no Event Hub | correlationId=%s", correlationId);
+        } catch (Exception e) {
+            LOG.errorf(e, "Erro inesperado ao enviar evento | correlationId=%s", correlationId);
+        }
     }
 
+    @PreDestroy
+    void shutdown() {
+        if (producer != null) {
+            try {
+                producer.close();
+                LOG.info("EventHubProducer finalizado com sucesso");
+            } catch (Exception e) {
+                LOG.warn("Erro ao fechar EventHubProducer", e);
+            }
+        }
+    }
 }

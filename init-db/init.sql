@@ -3,7 +3,26 @@ IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'hack')
     CREATE DATABASE hack;
 GO
 
+-- Criar login se não existir
+IF NOT EXISTS (SELECT * FROM sys.server_principals WHERE name = 'hack')
+    CREATE LOGIN hack WITH PASSWORD = 'Password23';
+GO
+
+-- Criar banco se não existir
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'hack')
+    CREATE DATABASE hack;
+GO
+
 USE hack;
+GO
+
+-- Criar usuário do banco se não existir
+IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = 'hack')
+    CREATE USER hack FOR LOGIN hack;
+GO
+
+-- Conceder permissões básicas
+ALTER ROLE db_owner ADD MEMBER hack;
 GO
 
 -- Criar tabela
