@@ -35,26 +35,16 @@ public class SimulacaoService {
     @Inject
     EventHubProducer eventHubProducer;
 
-    private final List<SimulacaoProdutoDto> simulacoesRealizadas = Collections.synchronizedList(new ArrayList<>());
-    private final List<SimulacaoResumoDto> simulacoesHistorico = Collections.synchronizedList(new ArrayList<>());
-
-
     @CacheResult(cacheName = "simulacoes")
     @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 1, delay = 5000)
-   // @Fallback(fallbackMethod = "simularFallback")
+   // @Fallback(fallbackMethod = "simularFallback")  // TODO: Aqui
     @Transactional
     public SimulacaoResponseDto simular(SimulacaoRequestDto request, String correlationId) {
 
         long inicio = System.currentTimeMillis();
 
         // Buscar produto compatível
-        Optional<Produto> produtoOpt = produtoRepository.listarTodos().stream()
-                .filter(p -> request.getValorDesejado().compareTo(p.getVrMinimo()) >= 0
-                        && (p.getVrMaximo() == null || request.getValorDesejado().compareTo(p.getVrMaximo()) <= 0)
-                        && request.getPrazo() >= p.getNuMinimoMeses()
-                        && (p.getNuMaximoMeses() == null || request.getPrazo() <= p.getNuMaximoMeses()))
-                .findFirst();
-
+        Optional<Produto> produtoOpt = buscarProdudoCompativel(request);
 
         if (produtoOpt.isEmpty()) {
             log.warn("Nenhum produto compatível encontrado...");
@@ -63,36 +53,58 @@ public class SimulacaoService {
             erro.setDescricaoProduto("Nenhum produto compatível encontrado.");
             return erro;
         }
-
-
         Produto produto = produtoOpt.get();
-
 
         // Calcular SAC e PRICE
         ResultadoSimulacaoDto sac = calcularSAC(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
         ResultadoSimulacaoDto price = calcularPRICE(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
 
-        // Montar resposta
-        SimulacaoResponseDto response = new SimulacaoResponseDto();
-        response.setCodigoProduto(produto.getCoProduto().longValue());
-        response.setDescricaoProduto(produto.getNoProduto());
-        response.setTaxaJuros(produto.getPcTaxaJuros());
-        response.setResultadoSimulacao(List.of(sac, price));
+        // Calcular valor total das parcelas (usando PRICE e sac) //TODO
+        BigDecimal valorTotalParcelasSac = sac.getParcelas().stream()
+                .map(ParcelaDto::getValorPrestacao)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Enviar para EventHub
-        //eventHubProducer.enviarEvento(response.toString(), correlationId);
-        log.info(String.format("Evento enviado para EventHub | correlationId=%s | payload=%s", correlationId, response));
+        BigDecimal valorTotalParcelasPrice = price.getParcelas().stream()
+                .map(ParcelaDto::getValorPrestacao)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Simulacao simulacao = Simulacao.builder()
                 .produto(produto.getNoProduto())
                 .dataSimulacao(LocalDate.now())
                 .valorSimulado(request.getValorDesejado())
+                .prazo(request.getPrazo())
+                .valorTotalParcelasSac(valorTotalParcelasSac)
+                .valorTotalParcelasPrice(valorTotalParcelasPrice)
                 .tempoRespostaMs(System.currentTimeMillis() - inicio)
                 .build();
 
         simulacaoRepository.salvar(simulacao);
 
+        SimulacaoResponseDto response = montarRetornoSimulacao(produto, sac, price);
+
+        // Enviar para EventHub
+        //TODO eventHubProducer.enviarEvento(response.toString(), correlationId);
+        log.info(String.format("Evento enviado para EventHub | correlationId=%s | payload=%s", correlationId, response));
+
         return response;
+    }
+
+    private SimulacaoResponseDto montarRetornoSimulacao(Produto produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price) {
+        SimulacaoResponseDto response = new SimulacaoResponseDto();
+        response.setCodigoProduto(produto.getCoProduto().longValue());
+        response.setDescricaoProduto(produto.getNoProduto());
+        response.setTaxaJuros(produto.getPcTaxaJuros());
+        response.setResultadoSimulacao(List.of(sac, price));
+        return response;
+    }
+
+    private Optional<Produto>buscarProdudoCompativel(SimulacaoRequestDto request){
+        return  produtoRepository.listarTodos().stream()
+                .filter(p -> request.getValorDesejado().compareTo(p.getVrMinimo()) >= 0
+                        && (p.getVrMaximo() == null || request.getValorDesejado().compareTo(p.getVrMaximo()) <= 0)
+                        && request.getPrazo() >= p.getNuMinimoMeses()
+                        && (p.getNuMaximoMeses() == null || request.getPrazo() <= p.getNuMaximoMeses()))
+                .findFirst();
     }
 
     private ResultadoSimulacaoDto calcularSAC(BigDecimal valor, BigDecimal taxaMensal, int prazo) {
@@ -223,8 +235,8 @@ public class SimulacaoService {
             SimulacaoResumoDto dto = new SimulacaoResumoDto();
             dto.setIdSimulacao(simulacao.getId().intValue());
             dto.setValorDesejado(simulacao.getValorSimulado());
-            dto.setPrazo(0); // Se quiser incluir prazo, precisaria estar na entidade
-            dto.setValorTotalParcelas(BigDecimal.ZERO); // idem
+            dto.setPrazo(simulacao.getPrazo());
+            dto.setValorTotalParcelas(simulacao.getValorTotalParcelas());
             return dto;
         }).collect(Collectors.toList());
 
