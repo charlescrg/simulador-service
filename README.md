@@ -29,7 +29,6 @@ Simulador-Service (Hackathon VITEC)
    1. Clone o repositório:
       
 	      git clone https://github.com/charlescrg/simulador-service.git
-	      cd superapp-backend
    
    3. Execute com Docker:
 
