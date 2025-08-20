@@ -16,7 +16,7 @@ public class SimulacaoRepository {
     EntityManager em;
 
     public List<SimulacaoEntity> listarTodas() {
-        TypedQuery<SimulacaoEntity> query = em.createQuery("SELECT s FROM Simulacao s", SimulacaoEntity.class);
+        TypedQuery<SimulacaoEntity> query = em.createQuery("SELECT s FROM SimulacaoEntity s", SimulacaoEntity.class);
         return query.getResultList();
     }
 
