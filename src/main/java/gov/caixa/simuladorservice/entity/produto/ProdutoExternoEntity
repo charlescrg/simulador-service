@@ -1,0 +1,50 @@
+package gov.caixa.simuladorservice.entity.produto;
+
+import io.quarkus.agroal.DataSource;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.*;
+import lombok.*;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+import java.math.BigDecimal;
+
+@Entity
+@Table(name = "PRODUTO", schema = "dbo")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@DataSource("external")
+@Schema(description = "Entidade que representa um produto de empréstimo no banco externo")
+public class ProdutoExternoEntity extends PanacheEntityBase {
+
+    @Id
+    @Column(name = "CO_PRODUTO", nullable = false)
+    @Schema(description = "Código do produto", example = "1")
+    private Integer coProduto;
+
+    @Column(name = "NO_PRODUTO", nullable = false, length = 200)
+    @Schema(description = "Nome do produto", example = "Empréstimo Pessoal")
+    private String noProduto;
+
+    @Column(name = "PC_TAXA_JUROS", nullable = false, precision = 10, scale = 9)
+    @Schema(description = "Taxa de juros", example = "0.025")
+    private BigDecimal pcTaxaJuros;
+
+    @Column(name = "NU_MINIMO_MESES", nullable = false)
+    @Schema(description = "Número mínimo de meses", example = "6")
+    private Short nuMinimoMeses;
+
+    @Column(name = "NU_MAXIMO_MESES")
+    @Schema(description = "Número máximo de meses", example = "48")
+    private Short nuMaximoMeses;
+
+    @Column(name = "VR_MINIMO", nullable = false, precision = 18, scale = 2)
+    @Schema(description = "Valor mínimo permitido", example = "1000.00")
+    private BigDecimal vrMinimo;
+
+    @Column(name = "VR_MAXIMO", precision = 18, scale = 2)
+    @Schema(description = "Valor máximo permitido", example = "50000.00")
+    private BigDecimal vrMaximo;
+}
