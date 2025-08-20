@@ -1,6 +1,7 @@
 package gov.caixa.simuladorservice.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -11,6 +12,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Schema(name = "VolumeSimuladoResponse", description = "Volume simulado por produto e por dia")
 public class VolumeSimuladoResponseDto {
 
