@@ -1,10 +1,8 @@
 package gov.caixa.simuladorservice.resource;
 
-import gov.caixa.simuladorservice.dto.ListaSimulacoesResponseDto;
-import gov.caixa.simuladorservice.dto.SimulacaoRequestDto;
-import gov.caixa.simuladorservice.dto.SimulacaoResponseDto;
-import gov.caixa.simuladorservice.dto.VolumeSimuladoResponseDto;
+import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.service.SimulacaoService;
+import gov.caixa.simuladorservice.service.EventService;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -20,6 +18,7 @@ import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +40,9 @@ public class SimulacaoResource {
     @Inject
     SimulacaoService simulacaoService;
 
+    @Inject
+    EventService eventService;
+
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket resolveBucket(String ip) {
@@ -49,78 +51,51 @@ public class SimulacaoResource {
                 .build());
     }
 
+
     @POST
     @Operation(summary = "Simula empréstimo com SAC e PRICE")
-    @APIResponse(
-            responseCode = "200",
-            description = "Simulação realizada com sucesso",
-            content = @Content(
-                    mediaType = "application/json",
-                    examples = @ExampleObject(
-                            name = "Exemplo de simulação",
-                            value = "{\n" +
-                                    "  \"valorParcela\": 875.00,\n" +
-                                    "  \"valorTotal\": 10500.00,\n" +
-                                    "  \"tipo\": \"PRICE\"\n" +
-                                    "}"
+    @APIResponses(value = {
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Simulação realizada com sucesso",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = SimulacaoResponseDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "400",
+                    description = "Requisição com formato inválido",
+                    content = @Content(
+                            mediaType = "application/problem+json",
+                            schema = @Schema(implementation = ErroValidacaoDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "401",
+                    description = "Usuário não autenticado",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "403",
+                    description = "Acesso não permitido",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "429",
+                    description = "Limite de requisições excedido",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
                     )
             )
-    )
-    @APIResponse(
-            responseCode = "400",
-            description = "Requisição com formato inválido",
-            content = @Content(
-                    mediaType = "application/problem+json",
-                    examples = @ExampleObject(
-                            name = "Exemplo de erro 400",
-                            value = "{\n" +
-                                    "  \"type\": \"https://pix.bcb.gov.br/api/v2/error/SimulacaoInvalida\",\n" +
-                                    "  \"title\": \"Operação inválida.\",\n" +
-                                    "  \"status\": 400,\n" +
-                                    "  \"detail\": \"O objeto simulacao.valorDesejado não respeita o schema.\",\n" +
-                                    "  \"violacoes\": [\n" +
-                                    "    {\n" +
-                                    "      \"razao\": \"Valor menor que R$100\",\n" +
-                                    "      \"propriedade\": \"valorDesejado\"\n" +
-                                    "    }\n" +
-                                    "  ]\n" +
-                                    "}"
-                    )
-            )
-    )
-    @APIResponse(
-            responseCode = "401",
-            description = "Usuário não autenticado",
-            content = @Content(
-                    mediaType = "application/json",
-                    examples = @ExampleObject(
-                            name = "Exemplo 401",
-                            value = "{ \"error\": \"Token inválido ou ausente\" }"
-                    )
-            )
-    )
-    @APIResponse(
-            responseCode = "403",
-            description = "Acesso não permitido",
-            content = @Content(
-                    mediaType = "application/json",
-                    examples = @ExampleObject(
-                            name = "Exemplo 403",
-                            value = "{ \"error\": \"Usuário não tem permissão para essa ação\" }"
-                    )
-            )
-    )
-    @APIResponse(
-            responseCode = "429",
-            description = "Limite de requisições excedido",
-            content = @Content(
-                    mediaType = "application/json",
-                    examples = @ExampleObject(
-                            name = "Exemplo 429",
-                            value = "{ \"error\": \"Limite de requisições atingido. Tente novamente mais tarde.\" }"
-                    )
-            )
-    )
+    })
     @Authenticated
     public Response simular(@Valid SimulacaoRequestDto request,
                             @Context UriInfo uriInfo,
@@ -163,6 +138,7 @@ public class SimulacaoResource {
         try {
             SimulacaoResponseDto resposta = simulacaoService.simular(request, finalCorrelationId);
             log.info("Simulação concluída com sucesso para usuário={}", usuario);
+            eventService.enviarEvento(resposta.toString(), finalCorrelationId);
             return Response.ok(resposta).build();
         } catch (Exception e) {
             log.error("Erro na simulação para usuário={} IP={}", usuario, finalIp, e);
@@ -173,20 +149,44 @@ public class SimulacaoResource {
     }
 
 
+
     @GET
     @Path("/listar")
     @Operation(summary = "Lista todas as simulações realizadas")
-    @APIResponse(
-        responseCode = "200",
-        description = "Lista de simulações realizadas",
-        content = @Content(mediaType = "application/json",
-            schema = @Schema(implementation = ListaSimulacoesResponseDto.class))
-    )
-    @APIResponse(
-        responseCode = "500",
-        description = "Erro interno ao listar simulações",
-        content = @Content(mediaType = "application/json")
-    )
+    @APIResponses(value = {
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Lista de simulações realizadas",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ListaSimulacoesResponseDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "401",
+                    description = "Usuário não autenticado",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "403",
+                    description = "Acesso não permitido",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "500",
+                    description = "Erro interno ao listar simulações",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
+                    )
+            )
+    })
     @Authenticated
     public Response listarSimulacoes() {
         try {
@@ -199,22 +199,43 @@ public class SimulacaoResource {
         }
     }
 
-
-
     @GET
     @Path("/valores-por-produto-dia")
     @Operation(summary = "Retorna os valores simulados agrupados por produto e dia")
-    @APIResponse(
-            responseCode = "200",
-            description = "Valores simulados agrupados por produto e data",
-            content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = Map.class))
-    )
-    @APIResponse(
-            responseCode = "500",
-            description = "Erro interno ao listar valores simulados",
-            content = @Content(mediaType = "application/json")
-    )
+    @APIResponses(value = {
+            @APIResponse(
+                    responseCode = "200",
+                    description = "Valores simulados agrupados por produto e data",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = VolumeSimuladoResponseDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "401",
+                    description = "Usuário não autenticado",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "403",
+                    description = "Acesso não permitido",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
+                    )
+            ),
+            @APIResponse(
+                    responseCode = "500",
+                    description = "Erro interno ao listar simulações",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ErroPadraoDto.class)
+                    )
+            )
+    })
     @Authenticated
     public Response listarValoresPorProdutoDia() {
         try {
