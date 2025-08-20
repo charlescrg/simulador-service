@@ -1,6 +1,7 @@
 package gov.caixa.simuladorservice.repository;
 
-import gov.caixa.simuladorservice.entity.Simulacao;
+import gov.caixa.simuladorservice.entity.simulacao.SimulacaoEntity;
+import io.quarkus.agroal.DataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -11,15 +12,15 @@ import java.util.List;
 @ApplicationScoped
 public class SimulacaoRepository {
 
-    @PersistenceContext
+    @PersistenceContext(unitName = "local")
     EntityManager em;
 
-    public List<Simulacao> listarTodas() {
-        TypedQuery<Simulacao> query = em.createQuery("SELECT s FROM Simulacao s", Simulacao.class);
+    public List<SimulacaoEntity> listarTodas() {
+        TypedQuery<SimulacaoEntity> query = em.createQuery("SELECT s FROM Simulacao s", SimulacaoEntity.class);
         return query.getResultList();
     }
 
-    public void salvar(Simulacao simulacao) {
+    public void salvar(SimulacaoEntity simulacao) {
         em.persist(simulacao);
     }
 }
