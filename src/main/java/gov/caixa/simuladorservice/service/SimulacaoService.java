@@ -4,6 +4,7 @@ import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.entity.Produto;
 import gov.caixa.simuladorservice.entity.Simulacao;
 import gov.caixa.simuladorservice.entity.SimulacaoTipo;
+import gov.caixa.simuladorservice.mapper.SimulacaoMapper;
 import gov.caixa.simuladorservice.producer.EventHubProducer;
 import gov.caixa.simuladorservice.repository.ProdutoRepository;
 import gov.caixa.simuladorservice.repository.SimulacaoRepository;
@@ -12,11 +13,11 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Fallback;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,76 +35,105 @@ public class SimulacaoService {
     @Inject
     EventHubProducer eventHubProducer;
 
+    @Inject
+    SimuladorFinanceiroService simuladorFinanceiroService;
+
+    @Inject
+    SimulacaoMapper simulacaoMapper;
+
     @CacheResult(cacheName = "simulacoes")
     @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 1, delay = 5000)
-   // @Fallback(fallbackMethod = "simularFallback")  // TODO: Aqui
+    @Fallback(fallbackMethod = "simularFallback")
     @Transactional
     public SimulacaoResponseDto simular(SimulacaoRequestDto request, String correlationId) {
-
         long inicio = System.currentTimeMillis();
 
-        // Buscar produto compatível
-        Optional<Produto> produtoOpt = buscarProdudoCompativel(request);
-
-        if (produtoOpt.isEmpty()) {
+        Produto produto = buscarProduto(request);
+        if (produto == null) {
             log.warn("Nenhum produto compatível encontrado...");
-
-            SimulacaoResponseDto erro = new SimulacaoResponseDto();
-            erro.setDescricaoProduto("Nenhum produto compatível encontrado.");
-            return erro;
+            return SimulacaoResponseDto.builder()
+                    .descricaoProduto("Nenhum produto compatível encontrado.")
+                    .build();
         }
-        Produto produto = produtoOpt.get();
 
-        // Calcular SAC e PRICE
-        ResultadoSimulacaoDto sac = calcularSAC(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
-        ResultadoSimulacaoDto price = calcularPRICE(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
+        ResultadoSimulacaoDto sac = simuladorFinanceiroService.calcularSAC(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
+        ResultadoSimulacaoDto price = simuladorFinanceiroService.calcularPRICE(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
 
-        // Calcular valor total das parcelas (usando PRICE e sac) //TODO
-        BigDecimal valorTotalParcelasSac = sac.getParcelas().stream()
-                .map(ParcelaDto::getValorPrestacao)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Simulacao simulacao = simulacaoMapper.criarSimulacao(request, produto, System.currentTimeMillis() - inicio);
 
-        BigDecimal valorTotalParcelasPrice = price.getParcelas().stream()
-                .map(ParcelaDto::getValorPrestacao)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // Cria a simulação sem os tipos
-        Simulacao simulacao = Simulacao.builder()
-                .produto(produto.getNoProduto())
-                .dataSimulacao(LocalDate.now())
-                .valorSimulado(request.getValorDesejado())
-                .valorTotalCredito(request.getValorDesejado()) // ou outro valor calculado
-                .tempoRespostaMs(System.currentTimeMillis() - inicio)
-                .build();
-
-        // Cria os tipos de simulação e associa à simulação
-        List<SimulacaoTipo> tipos = List.of(
-                new SimulacaoTipo(null, "SAC", valorTotalParcelasSac, simulacao, sac.getParcelas().stream().map(ParcelaDto::getValorPrestacao).reduce(BigDecimal.ZERO, BigDecimal::add), produto.getPcTaxaJuros(), BigDecimal.valueOf(request.getPrazo())),
-                new SimulacaoTipo(null, "PRICE", valorTotalParcelasPrice, simulacao, price.getParcelas().stream().map(ParcelaDto::getValorPrestacao).reduce(BigDecimal.ZERO, BigDecimal::add), produto.getPcTaxaJuros(), BigDecimal.valueOf(request.getPrazo()))
-        );
-
-        // Adiciona os tipos à simulação
+        List<SimulacaoTipo> tipos = criarTiposSimulacao(simulacao, produto, sac, price, request);
         simulacao.setTipos(tipos);
 
         simulacaoRepository.salvar(simulacao);
 
-        SimulacaoResponseDto response = montarRetornoSimulacao(produto, sac, price, simulacao);
-
-        // Enviar para EventHub
-        //TODO eventHubProducer.enviarEvento(response.toString(), correlationId);
-        log.info(String.format("Evento enviado para EventHub | correlationId=%s | payload=%s", correlationId, response));
+        SimulacaoResponseDto response = simulacaoMapper.montarRetornoSimulacao(produto, sac, price, simulacao);
 
         return response;
     }
 
-    private SimulacaoResponseDto montarRetornoSimulacao(Produto produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price, Simulacao simulacao) {
-        SimulacaoResponseDto response = new SimulacaoResponseDto();
-        response.setIdSimulacao(simulacao.getId());
-        response.setCodigoProduto(produto.getCoProduto().longValue());
-        response.setDescricaoProduto(produto.getNoProduto());
-        response.setTaxaJuros(produto.getPcTaxaJuros());
-        response.setResultadoSimulacao(List.of(sac, price));
+    @CacheResult(cacheName = "listarValoresPorProdutoDia")
+    public List<VolumeSimuladoResponseDto> listarValoresPorProdutoDia() {
+        List<Simulacao> simulacoes = simulacaoRepository.listarTodas();
+
+        Map<LocalDate, Map<String, List<Simulacao>>> agrupado = simulacaoMapper.agruparPorDataEProduto(simulacoes);
+
+        List<VolumeSimuladoResponseDto> response = new ArrayList<>();
+
+        for (Map.Entry<LocalDate, Map<String, List<Simulacao>>> entryData : agrupado.entrySet()) {
+            LocalDate data = entryData.getKey();
+            Map<String, List<Simulacao>> porProduto = entryData.getValue();
+
+            List<SimulacaoProdutoDto> simulacoesPorProduto = porProduto.entrySet().stream()
+                    .map(entry -> {
+                        List<SimulacaoTipo> tiposSAC = simulacaoMapper.filtrarTipos(entry.getValue(), "SAC");
+                        List<SimulacaoTipo> tiposPRICE = simulacaoMapper.filtrarTipos(entry.getValue(), "PRICE");
+                        BigDecimal taxaMediaJuroSAC = simuladorFinanceiroService.calcularMedia(tiposSAC.stream().map(SimulacaoTipo::getTaxaJuro).toList(), 3);
+                        BigDecimal taxaMediaJuroPRICE = simuladorFinanceiroService.calcularMedia(tiposPRICE.stream().map(SimulacaoTipo::getTaxaJuro).toList(), 3);
+                        BigDecimal valorMedioPrestacaoSAC = simuladorFinanceiroService.calcularMedia(tiposSAC.stream().map(SimulacaoTipo::getValorMedioPrestacao).toList(), 2);
+                        BigDecimal valorMedioPrestacaoPRICE = simuladorFinanceiroService.calcularMedia(tiposPRICE.stream().map(SimulacaoTipo::getValorMedioPrestacao).toList(), 2);
+                        BigDecimal valorTotalCreditoSAC = simuladorFinanceiroService.somarValores(tiposSAC.stream().map(SimulacaoTipo::getValorTotalParcelas).toList());
+                        BigDecimal valorTotalCreditoPRICE = simuladorFinanceiroService.somarValores(tiposPRICE.stream().map(SimulacaoTipo::getValorTotalParcelas).toList());
+                        BigDecimal valorTotalDesejado = simuladorFinanceiroService.somarValores(entry.getValue().stream().map(Simulacao::getValorSimulado).toList());
+                        Integer codigoProduto = entry.getValue().isEmpty() ? 0 : entry.getValue().get(0).getCodigoProduto();
+
+                        return simulacaoMapper.montarDtoProduto(entry.getKey(), entry.getValue(), tiposSAC, tiposPRICE,
+                                taxaMediaJuroSAC, taxaMediaJuroPRICE,
+                                valorMedioPrestacaoSAC, valorMedioPrestacaoPRICE,
+                                valorTotalCreditoSAC, valorTotalCreditoPRICE,
+                                valorTotalDesejado, codigoProduto);
+                    })
+                    .toList();
+
+            response.add(VolumeSimuladoResponseDto.builder()
+                    .dataReferencia(data)
+                    .simulacoes(simulacoesPorProduto)
+                    .build());
+        }
         return response;
+    }
+
+    @CacheResult(cacheName = "listarSimulacoes")
+    public ListaSimulacoesResponseDto listarSimulacoes() {
+        List<Simulacao> simulacoes = simulacaoRepository.listarTodas();
+
+        List<SimulacaoResumoDto> registros = simulacoes.stream()
+                .map(simulacaoMapper::mapearParaResumo)
+                .collect(Collectors.toList());
+        return simulacaoMapper.montarListaSimulacoes(registros);
+    }
+
+    private Produto buscarProduto(SimulacaoRequestDto request) {
+        return buscarProdudoCompativel(request).orElse(null);
+    }
+
+    public SimulacaoResponseDto simularFallback(SimulacaoRequestDto request, String correlationId) {
+        log.warn(String.format("Fallback acionado | correlationId=%s | dados=%s", correlationId, request));
+        // TODO: Aqui você poderia salvar a requisição em uma fila para reprocessamento posterior
+
+        SimulacaoResponseDto fallback = new SimulacaoResponseDto();
+        fallback.setDescricaoProduto("Simulação indisponível no momento. Sua solicitação será reprocessada.");
+        fallback.setResultadoSimulacao(Collections.emptyList());
+        return fallback;
     }
 
     private Optional<Produto>buscarProdudoCompativel(SimulacaoRequestDto request){
@@ -115,153 +145,18 @@ public class SimulacaoService {
                 .findFirst();
     }
 
-    private ResultadoSimulacaoDto calcularSAC(BigDecimal valor, BigDecimal taxaMensal, int prazo) {
-        List<ParcelaDto> parcelas = new ArrayList<>();
-        BigDecimal amortizacao = valor.divide(BigDecimal.valueOf(prazo), 2, RoundingMode.HALF_UP);
+    private List<SimulacaoTipo> criarTiposSimulacao(Simulacao simulacao, Produto produto,
+                                                    ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price,
+                                                    SimulacaoRequestDto request) {
 
-        for (int i = 1; i <= prazo; i++) {
-            BigDecimal saldoDevedor = valor.subtract(amortizacao.multiply(BigDecimal.valueOf(i - 1)));
-            BigDecimal juros = saldoDevedor.multiply(taxaMensal).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal prestacao = amortizacao.add(juros);
-            parcelas.add(ParcelaDto.builder()
-                    .numero(i)
-                    .valorAmortizacao(amortizacao)
-                    .valorJuros(juros)
-                    .valorPrestacao(prestacao)
-                    .build());
-        }
+        BigDecimal totalSac = simuladorFinanceiroService.calcularTotalPrestacoes(sac.getParcelas());
+        BigDecimal mediaSac = simuladorFinanceiroService.calcularMediaPrestacao(sac.getParcelas());
+        BigDecimal totalPrice = simuladorFinanceiroService.calcularTotalPrestacoes(price.getParcelas());
+        BigDecimal mediaPrice = simuladorFinanceiroService.calcularMediaPrestacao(price.getParcelas());
 
-        return ResultadoSimulacaoDto.builder()
-                .tipo("SAC")
-                .parcelas(parcelas)
-                .build();
-    }
-
-    private ResultadoSimulacaoDto calcularPRICE(BigDecimal valor, BigDecimal taxaMensal, int prazo) {
-        List<ParcelaDto> parcelas = new ArrayList<>();
-
-        // Definir precisão e modo de arredondamento
-        MathContext mc = new MathContext(15, RoundingMode.HALF_UP);
-
-        // Cálculo do fator PRICE: (1 - (1 + i)^(-n))
-        BigDecimal fator = BigDecimal.ONE.subtract(
-                BigDecimal.ONE.add(taxaMensal).pow(-prazo, mc)
+        return List.of(
+                new SimulacaoTipo(null, "SAC", totalSac, simulacao, mediaSac, produto.getPcTaxaJuros(), BigDecimal.valueOf(request.getPrazo())),
+                new SimulacaoTipo(null, "PRICE", totalPrice, simulacao, mediaPrice, produto.getPcTaxaJuros(), BigDecimal.valueOf(request.getPrazo()))
         );
-
-        // Prestação constante: P = V * i / fator
-        BigDecimal prestacao = valor.multiply(taxaMensal, mc)
-                .divide(fator, 2, RoundingMode.HALF_UP);
-
-        BigDecimal saldo = valor;
-        for (int i = 1; i <= prazo; i++) {
-            BigDecimal juros = saldo.multiply(taxaMensal, mc).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal amortizacao = prestacao.subtract(juros, mc).setScale(2, RoundingMode.HALF_UP);
-            saldo = saldo.subtract(amortizacao, mc).setScale(2, RoundingMode.HALF_UP);
-
-            parcelas.add(ParcelaDto.builder()
-                    .numero(i)
-                    .valorAmortizacao(amortizacao)
-                    .valorJuros(juros)
-                    .valorPrestacao(prestacao)
-                    .build());
-        }
-
-        return ResultadoSimulacaoDto.builder()
-                .tipo("PRICE")
-                .parcelas(parcelas)
-                .build();
     }
-    public SimulacaoResponseDto simularFallback(SimulacaoRequestDto request, String correlationId) {
-
-        log.warn(String.format("Fallback acionado | correlationId=%s | dados=%s", correlationId, request));
-
-        // TODO: Aqui você poderia salvar a requisição em uma fila para reprocessamento posterior
-    
-        SimulacaoResponseDto fallback = new SimulacaoResponseDto();
-        fallback.setDescricaoProduto("Simulação indisponível no momento. Sua solicitação será reprocessada.");
-        fallback.setResultadoSimulacao(Collections.emptyList());
-    
-        return fallback;
-    }
-
-    public List<VolumeSimuladoResponseDto> listarValoresPorProdutoDia() {
-        List<Simulacao> simulacoes = simulacaoRepository.listarTodas();
-
-        // Agrupar por dataSimulacao e produto
-        Map<LocalDate, Map<String, List<Simulacao>>> agrupado = simulacoes.stream()
-                .collect(Collectors.groupingBy(
-                        Simulacao::getDataSimulacao,
-                        Collectors.groupingBy(Simulacao::getProduto)
-                ));
-
-        List<VolumeSimuladoResponseDto> response = new ArrayList<>();
-
-        for (Map.Entry<LocalDate, Map<String, List<Simulacao>>> entryData : agrupado.entrySet()) {
-            LocalDate data = entryData.getKey();
-            Map<String, List<Simulacao>> porProduto = entryData.getValue();
-
-            List<SimulacaoProdutoDto> simulacoesPorProduto = new ArrayList<>();
-
-            for (Map.Entry<String, List<Simulacao>> entryProduto : porProduto.entrySet()) {
-                String nomeProduto = entryProduto.getKey();
-                List<Simulacao> simulacoesProduto = entryProduto.getValue();
-
-                BigDecimal taxaMediaJuro = BigDecimal.ZERO; // Se quiser calcular, precisaria incluir na entidade
-                BigDecimal valorTotalDesejado = simulacoesProduto.stream()
-                        .map(Simulacao::getValorSimulado)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-                BigDecimal valorMedioPrestacao = BigDecimal.ZERO; // Se quiser calcular, precisaria incluir na entidade
-                BigDecimal valorTotalCredito = BigDecimal.ZERO; // idem
-
-                SimulacaoProdutoDto dto = new SimulacaoProdutoDto();
-                dto.setCodigoProduto(0); // Se tiver código, incluir na entidade
-                dto.setDescricaoProduto(nomeProduto);
-                dto.setTaxaMediaJuro(taxaMediaJuro);
-                dto.setValorTotalDesejado(valorTotalDesejado);
-                dto.setValorTotalCredito(valorTotalCredito);
-                dto.setValorMedioPrestacao(valorMedioPrestacao);
-
-                simulacoesPorProduto.add(dto);
-            }
-
-            VolumeSimuladoResponseDto volumeDto = new VolumeSimuladoResponseDto();
-            volumeDto.setDataReferencia(data);
-            volumeDto.setSimulacoes(simulacoesPorProduto);
-
-            response.add(volumeDto);
-        }
-
-        return response;
-    }
-
-    public ListaSimulacoesResponseDto listarSimulacoes() {
-        List<Simulacao> simulacoes = simulacaoRepository.listarTodas();
-
-        List<SimulacaoResumoDto> registros = simulacoes.stream().map(simulacao -> {
-            SimulacaoResumoDto dto = new SimulacaoResumoDto();
-            dto.setIdSimulacao(Math.toIntExact(simulacao.getId()));
-            dto.setValorDesejado(simulacao.getValorSimulado());
-
-            List<SimulacaoTipoResumoDto> tipos = simulacao.getTipos().stream().map(tipo -> {
-                SimulacaoTipoResumoDto tipoDto = new SimulacaoTipoResumoDto();
-                tipoDto.setTipo(tipo.getTipoSimulacao());
-                tipoDto.setPrazo(tipo.getPrazo().intValue());
-                tipoDto.setValorTotalParcelas(tipo.getValorTotalParcelas());
-                return tipoDto;
-            }).collect(Collectors.toList());
-
-            dto.setTipos(tipos);
-            return dto;
-        }).collect(Collectors.toList());
-
-        ListaSimulacoesResponseDto response = new ListaSimulacoesResponseDto();
-        response.setPagina(1);
-        response.setQtdRegistros(registros.size());           // ou total do banco
-        response.setQtdRegistrosPagina(registros.size());     // ou limite de página
-        response.setRegistros(registros);
-
-        return response;
-    }
-
 }
