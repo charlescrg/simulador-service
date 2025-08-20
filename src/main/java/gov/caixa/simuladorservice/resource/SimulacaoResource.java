@@ -8,11 +8,7 @@ import gov.caixa.simuladorservice.service.SimulacaoService;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import io.quarkus.security.Authenticated;
-import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -34,8 +30,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-
-
 @Path("/api/v1/simulacoes")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -47,19 +41,6 @@ public class SimulacaoResource {
     @Inject
     SimulacaoService simulacaoService;
 
-    @Inject
-    MeterRegistry registry;
-    
-    private Timer simulacaoTimer;
-    private Counter simulacaoCounter;
-
-    private Timer listarSimulacoesTimer;
-    private Counter listarSimulacoesCounter;
-
-    private Timer volumeSimuladoTimer;
-    private Counter volumeSimuladoCounter;
-
-
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket resolveBucket(String ip) {
@@ -67,32 +48,6 @@ public class SimulacaoResource {
                 .addLimit(Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(1))))
                 .build());
     }
-
-    
-    @PostConstruct
-    void initMetrics() {
-        simulacaoTimer = Timer.builder("simulacao.tempo_resposta")
-            .description("Tempo de resposta da simulação")
-            .register(registry);
-        simulacaoCounter = Counter.builder("simulacao.total")
-            .description("Total de simulações realizadas")
-            .register(registry);
-
-        listarSimulacoesTimer = Timer.builder("listar_simulacoes.tempo_resposta")
-                .description("Tempo de resposta da listagem de simulações")
-                .register(registry);
-        listarSimulacoesCounter = Counter.builder("listar_simulacoes.total")
-                .description("Total de listagens de simulações realizadas")
-                .register(registry);
-
-        volumeSimuladoTimer = Timer.builder("volume_simulado.tempo_resposta")
-                .description("Tempo de resposta da listagem de valores simulados por produto/dia")
-                .register(registry);
-        volumeSimuladoCounter = Counter.builder("volume_simulado.total")
-                .description("Total de listagens de valores simulados por produto/dia")
-                .register(registry);
-    }
-
 
     @POST
     @Operation(summary = "Simula empréstimo com SAC e PRICE")
@@ -170,7 +125,7 @@ public class SimulacaoResource {
     public Response simular(@Valid SimulacaoRequestDto request,
                             @Context UriInfo uriInfo,
                             @Context SecurityContext securityContext,
-                            @Context HttpHeaders headers, 
+                            @Context HttpHeaders headers,
                             @Parameter(
                                     name = "X-Correlation-Id",
                                     description = "Identificador único para rastreamento da requisição",
@@ -200,25 +155,23 @@ public class SimulacaoResource {
         }
 
         log.info("Simulação solicitada por: usuário={}, IP={}, valor={}, prazo={}, correlationId={}",
-                usuario, ip, request.getValorDesejado(), request.getPrazo(),correlationId);
+                usuario, ip, request.getValorDesejado(), request.getPrazo(), correlationId);
 
-    final String finalIp = ip;
-    final String finalCorrelationId = correlationId;
+        final String finalIp = ip;
+        final String finalCorrelationId = correlationId;
 
-    return simulacaoTimer.record(() -> {
-        simulacaoCounter.increment();
+        try {
+            SimulacaoResponseDto resposta = simulacaoService.simular(request, finalCorrelationId);
+            log.info("Simulação concluída com sucesso para usuário={}", usuario);
+            return Response.ok(resposta).build();
+        } catch (Exception e) {
+            log.error("Erro na simulação para usuário={} IP={}", usuario, finalIp, e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Erro interno ao processar a simulação").build();
+        }
 
-            try {
-                SimulacaoResponseDto resposta = simulacaoService.simular(request, finalCorrelationId);
-                log.info("Simulação concluída com sucesso para usuário={}", usuario);
-                return Response.ok(resposta).build();
-            } catch (Exception e) {
-                log.error("Erro na simulação para usuário={} IP={}", usuario, finalIp, e);
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity("Erro interno ao processar a simulação").build();
-            }
-        });
     }
+
 
     @GET
     @Path("/listar")
@@ -236,18 +189,17 @@ public class SimulacaoResource {
     )
     @Authenticated
     public Response listarSimulacoes() {
-        return listarSimulacoesTimer.record(() -> {
-            listarSimulacoesCounter.increment();
-            try {
-                ListaSimulacoesResponseDto resposta = simulacaoService.listarSimulacoes();
-                return Response.ok(resposta).build();
-            } catch (Exception e) {
-                log.error("Erro ao listar simulações", e);
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity("Erro ao listar simulações").build();
-            }
-        });
+        try {
+            ListaSimulacoesResponseDto resposta = simulacaoService.listarSimulacoes();
+            return Response.ok(resposta).build();
+        } catch (Exception e) {
+            log.error("Erro ao listar simulações", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Erro ao listar simulações").build();
+        }
     }
+
+
 
     @GET
     @Path("/valores-por-produto-dia")
@@ -265,16 +217,14 @@ public class SimulacaoResource {
     )
     @Authenticated
     public Response listarValoresPorProdutoDia() {
-        return volumeSimuladoTimer.record(() -> {
-            volumeSimuladoCounter.increment();
-            try {
-                List<VolumeSimuladoResponseDto> resposta = simulacaoService.listarValoresPorProdutoDia();
-                return Response.ok(resposta).build();
-            } catch (Exception e) {
-                log.error("Erro ao listar valores simulados por produto/dia", e);
-                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity("Erro ao listar valores simulados por produto/dia").build();
-            }
-        });
+        try {
+            List<VolumeSimuladoResponseDto> resposta = simulacaoService.listarValoresPorProdutoDia();
+            return Response.ok(resposta).build();
+        } catch (Exception e) {
+            log.error("Erro ao listar valores simulados por produto/dia", e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Erro ao listar valores simulados por produto/dia").build();
+        }
     }
+
 }

@@ -10,21 +10,22 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @NoArgsConstructor
 @Schema(name = "EndpointTelemetria", description = "Dados de telemetria de um endpoint")
 public class EndpointTelemetriaDto {
-    @Schema(description = "Nome da API", example = "Simulacao")
+
+    @Schema(description = "Nome da API/endpoint", example = "Simulacao")
     private String nomeApi;
 
     @Schema(description = "Quantidade de requisições", example = "135")
-    private Integer qtdRequisicoes;
+    private long qtdRequisicoes;
 
     @Schema(description = "Tempo médio de resposta em milissegundos", example = "150")
-    private Integer tempoMedio;
+    private double tempoMedio;
 
     @Schema(description = "Tempo mínimo de resposta em milissegundos", example = "23")
-    private Integer tempoMinimo;
+    private long tempoMinimo;
 
     @Schema(description = "Tempo máximo de resposta em milissegundos", example = "860")
-    private Integer tempoMaximo;
+    private long tempoMaximo;
 
-    @Schema(description = "Percentual de sucesso", example = "0.98")
-    private Double percentualSucesso;
+    @Schema(description = "Percentual de requisições com sucesso", example = "0.98")
+    private double percentualSucesso;
 }

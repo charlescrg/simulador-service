@@ -11,10 +11,8 @@ import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
-import org.eclipse.microprofile.faulttolerance.Fallback;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -89,7 +87,7 @@ public class SimulacaoService {
 
         simulacaoRepository.salvar(simulacao);
 
-        SimulacaoResponseDto response = montarRetornoSimulacao(produto, sac, price);
+        SimulacaoResponseDto response = montarRetornoSimulacao(produto, sac, price, simulacao);
 
         // Enviar para EventHub
         //TODO eventHubProducer.enviarEvento(response.toString(), correlationId);
@@ -98,8 +96,9 @@ public class SimulacaoService {
         return response;
     }
 
-    private SimulacaoResponseDto montarRetornoSimulacao(Produto produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price) {
+    private SimulacaoResponseDto montarRetornoSimulacao(Produto produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price, Simulacao simulacao) {
         SimulacaoResponseDto response = new SimulacaoResponseDto();
+        response.setIdSimulacao(simulacao.getId());
         response.setCodigoProduto(produto.getCoProduto().longValue());
         response.setDescricaoProduto(produto.getNoProduto());
         response.setTaxaJuros(produto.getPcTaxaJuros());
@@ -236,23 +235,30 @@ public class SimulacaoService {
         return response;
     }
 
-
     public ListaSimulacoesResponseDto listarSimulacoes() {
         List<Simulacao> simulacoes = simulacaoRepository.listarTodas();
 
         List<SimulacaoResumoDto> registros = simulacoes.stream().map(simulacao -> {
             SimulacaoResumoDto dto = new SimulacaoResumoDto();
-            dto.setIdSimulacao(simulacao.getId().intValue());
+            dto.setIdSimulacao(Math.toIntExact(simulacao.getId()));
             dto.setValorDesejado(simulacao.getValorSimulado());
-            //dto.setPrazo(simulacao.getPrazo());
-            //dto.setValorTotalParcelas(simulacao.getValorTotalParcelas());
+
+            List<SimulacaoTipoResumoDto> tipos = simulacao.getTipos().stream().map(tipo -> {
+                SimulacaoTipoResumoDto tipoDto = new SimulacaoTipoResumoDto();
+                tipoDto.setTipo(tipo.getTipoSimulacao());
+                tipoDto.setPrazo(tipo.getPrazo().intValue());
+                tipoDto.setValorTotalParcelas(tipo.getValorTotalParcelas());
+                return tipoDto;
+            }).collect(Collectors.toList());
+
+            dto.setTipos(tipos);
             return dto;
         }).collect(Collectors.toList());
 
         ListaSimulacoesResponseDto response = new ListaSimulacoesResponseDto();
         response.setPagina(1);
-        response.setQtdRegistros(registros.size());
-        response.setQtdRegistrosPagina(registros.size());
+        response.setQtdRegistros(registros.size());           // ou total do banco
+        response.setQtdRegistrosPagina(registros.size());     // ou limite de página
         response.setRegistros(registros);
 
         return response;

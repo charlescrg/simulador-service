@@ -16,6 +16,9 @@ import java.util.List;
 @Schema(name = "SimulacaoResponse", description = "Resposta da simulação do empréstimo")
 public class SimulacaoResponseDto {
 
+    @Schema(description = "ID da simulação", example = "20180702")
+    private Long idSimulacao;
+
     @Schema(description = "Código do produto", example = "1")
     private Long codigoProduto;
 
