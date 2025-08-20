@@ -19,12 +19,9 @@ public class SimulacaoResumoDto {
     @Schema(description = "Valor desejado", example = "900.00")
     private BigDecimal valorDesejado;
 
-    @Schema(description = "Lista dos tipos de simulação (SAC e PRICE)")
-    private List<SimulacaoTipoResumoDto> tipos;
-
     @Schema(description = "Prazo em meses", example = "5")
     private Integer prazo;
 
     @Schema(description = "Valor total das parcelas", example = "1243.28")
-    private BigDecimal valorTotalParcelas;
+    private List<ValorTotalParcelasTipoDto> valorTotalParcelas;
 }
