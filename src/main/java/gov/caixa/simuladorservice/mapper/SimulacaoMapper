@@ -1,0 +1,99 @@
+package gov.caixa.simuladorservice.mapper;
+
+import gov.caixa.simuladorservice.dto.*;
+import gov.caixa.simuladorservice.entity.Simulacao;
+import gov.caixa.simuladorservice.entity.SimulacaoTipo;
+import gov.caixa.simuladorservice.entity.Produto;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class SimulacaoMapper {
+
+    public Simulacao criarSimulacao(SimulacaoRequestDto request, Produto produto, long tempoRespostaMs) {
+        return Simulacao.builder()
+                .produto(produto.getNoProduto())
+                .codigoProduto(produto.getCoProduto())
+                .dataSimulacao(LocalDate.now())
+                .valorSimulado(request.getValorDesejado())
+                .valorTotalCredito(request.getValorDesejado())
+                .tempoRespostaMs(tempoRespostaMs)
+                .build();
+    }
+
+    public SimulacaoResponseDto montarRetornoSimulacao(Produto produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price, Simulacao simulacao) {
+        SimulacaoResponseDto response = new SimulacaoResponseDto();
+        response.setIdSimulacao(simulacao.getId());
+        response.setCodigoProduto(produto.getCoProduto().longValue());
+        response.setDescricaoProduto(produto.getNoProduto());
+        response.setTaxaJuros(produto.getPcTaxaJuros());
+        response.setResultadoSimulacao(List.of(sac, price));
+        return response;
+    }
+
+    public SimulacaoResumoDto mapearParaResumo(Simulacao simulacao) {
+        Integer prazo = simulacao.getTipos().isEmpty() ? null : simulacao.getTipos().get(0).getPrazo().intValue();
+
+        SimulacaoResumoDto dto = new SimulacaoResumoDto();
+        dto.setIdSimulacao(Math.toIntExact(simulacao.getId()));
+        dto.setValorDesejado(simulacao.getValorSimulado());
+        dto.setPrazo(prazo);
+        List<ValorTotalParcelasTipoDto> valorTotalParcelas = simulacao.getTipos().stream()
+                .map(tipo -> {
+                    ValorTotalParcelasTipoDto tipoDto = new ValorTotalParcelasTipoDto();
+                    tipoDto.setTipo(tipo.getTipoSimulacao());
+                    tipoDto.setValorTotalParcelas(tipo.getValorTotalParcelas());
+                    return tipoDto;
+                })
+                .collect(Collectors.toList());
+        dto.setValorTotalParcelas(valorTotalParcelas);
+
+        return dto;
+    }
+
+    public ListaSimulacoesResponseDto montarListaSimulacoes(List<SimulacaoResumoDto> registros) {
+        return ListaSimulacoesResponseDto.builder()
+                .pagina(1)
+                .qtdRegistros(registros.size())
+                .qtdRegistrosPagina(registros.size())
+                .registros(registros)
+                .build();
+    }
+
+    public Map<LocalDate, Map<String, List<Simulacao>>> agruparPorDataEProduto(List<Simulacao> simulacoes) {
+        return simulacoes.stream()
+                .collect(Collectors.groupingBy(
+                        Simulacao::getDataSimulacao,
+                        Collectors.groupingBy(Simulacao::getProduto)
+                ));
+    }
+
+    public List<SimulacaoTipo> filtrarTipos(List<Simulacao> simulacoes, String tipo) {
+        return simulacoes.stream()
+                .flatMap(s -> s.getTipos().stream())
+                .filter(t -> tipo.equalsIgnoreCase(t.getTipoSimulacao()))
+                .toList();
+    }
+
+    public SimulacaoProdutoDto montarDtoProduto(String nomeProduto, List<Simulacao> simulacoesProduto,
+                                                List<SimulacaoTipo> tiposSAC, List<SimulacaoTipo> tiposPRICE,
+                                                BigDecimal taxaMediaJuroSAC, BigDecimal taxaMediaJuroPRICE,
+                                                BigDecimal valorMedioPrestacaoSAC, BigDecimal valorMedioPrestacaoPRICE,
+                                                BigDecimal valorTotalCreditoSAC, BigDecimal valorTotalCreditoPRICE,
+                                                BigDecimal valorTotalDesejado, Integer codigoProduto) {
+        return SimulacaoProdutoDto.builder()
+                .codigoProduto(codigoProduto)
+                .descricaoProduto(nomeProduto)
+                .taxaMediaJuroSAC(taxaMediaJuroSAC)
+                .taxaMediaJuroPRICE(taxaMediaJuroPRICE)
+                .valorMedioPrestacaoSAC(valorMedioPrestacaoSAC)
+                .valorMedioPrestacaoPRICE(valorMedioPrestacaoPRICE)
+                .valorTotalCreditoSAC(valorTotalCreditoSAC)
+                .valorTotalCreditoPRICE(valorTotalCreditoPRICE)
+                .valorTotalDesejado(valorTotalDesejado)
+                .build();
+    }
+}
