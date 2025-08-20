@@ -1,9 +1,6 @@
 package gov.caixa.simuladorservice.repository;
 
 import gov.caixa.simuladorservice.entity.produto.ProdutoExternoEntity;
-import io.quarkus.agroal.DataSource;
-import io.quarkus.hibernate.orm.PersistenceUnit;
-import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -12,18 +9,21 @@ import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @ApplicationScoped
-@PersistenceUnit("external")
-public class ProdutoExternoRepository implements PanacheRepository<ProdutoExternoEntity> {
+public class ProdutoExternoRepository {
+
+    @PersistenceContext(unitName = "external")
+    EntityManager em;
 
     public ProdutoExternoEntity findById(Integer id) {
-        return find("id", id).firstResult();
+        return em.find(ProdutoExternoEntity.class, id);
     }
 
     public List<ProdutoExternoEntity> listarTodos() {
-        return listAll();
+        TypedQuery<ProdutoExternoEntity> query = em.createQuery("SELECT p FROM ProdutoExternoEntity p", ProdutoExternoEntity.class);
+        return query.getResultList();
     }
 
     public void persist(ProdutoExternoEntity produto) {
-        persistAndFlush(produto);
+        em.persist(produto);
     }
 }
