@@ -8,6 +8,8 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -33,16 +35,23 @@ public class EventHubProducer {
             LOG.info("EventHubProducer inicializado com sucesso");
         } catch (Exception e) {
             LOG.error("Falha ao inicializar EventHubProducer", e);
-            producer = null; // evita NullPointerException ao enviar eventos
+            producer = null;
         }
     }
 
+
+    @CircuitBreaker(
+            requestVolumeThreshold = 4,
+            failureRatio = 0.75,
+            delay = 5000,
+            successThreshold = 2
+    )
+    @Fallback(fallbackMethod = "fallbackEnviarEvento")
     public void enviarEvento(String mensagemJson, String correlationId) {
         if (producer == null) {
             LOG.warnf("EventHubProducer não inicializado, evento não enviado | correlationId=%s", correlationId);
             return;
         }
-
         try {
             EventData eventData = new EventData(mensagemJson);
             eventData.getProperties().put("correlationId", correlationId);
@@ -67,5 +76,9 @@ public class EventHubProducer {
                 LOG.warn("Erro ao fechar EventHubProducer", e);
             }
         }
+    }
+
+    public void fallbackEnviarEvento(String mensagemJson, String correlationId) {
+        LOG.warnf("Fallback ativado: evento não enviado para EventHub | correlationId=%s", correlationId);
     }
 }
