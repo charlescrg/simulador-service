@@ -1,7 +1,7 @@
 package gov.caixa.simuladorservice.resource;
 
 import gov.caixa.simuladorservice.dto.TelemetriaResponseDto;
-import gov.caixa.simuladorservice.telemetria.TelemetriaInterceptor;
+import gov.caixa.simuladorservice.metric.MetricInterceptor;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -13,7 +13,7 @@ import jakarta.ws.rs.core.MediaType;
 public class TelemetriaResource {
 
     @Inject
-    TelemetriaInterceptor interceptor;
+    MetricInterceptor interceptor;
 
     @GET
     public TelemetriaResponseDto getTelemetria() {
