@@ -36,15 +36,14 @@ Simulador-Service (Hackathon VITEC)
 
    5. Acesse a API:
    
-	      Localmente (ambiente de desenvolvimento):
+      Localmente (ambiente de desenvolvimento):
 	         http://localhost:8080/api/vi/simulacao
 
    
    6. Acesse a documentação Swagger:
    
-		      http://localhost:8080/swagger-ui
-		      Para acessar a documentação quando estiver rodando o servidor localmente.
-	
+        Para acessar a documentação quando estiver rodando o servidor localmente.
+            http://localhost:8080/swagger-ui
 
 ## Testes com Postman
    Importe a coleção Postman disponível em:
