@@ -1,9 +1,9 @@
 package gov.caixa.simuladorservice.mapper;
 
 import gov.caixa.simuladorservice.dto.*;
-import gov.caixa.simuladorservice.entity.Simulacao;
-import gov.caixa.simuladorservice.entity.SimulacaoTipo;
-import gov.caixa.simuladorservice.entity.Produto;
+import gov.caixa.simuladorservice.entity.produto.ProdutoExternoEntity;
+import gov.caixa.simuladorservice.entity.simulacao.SimulacaoEntity;
+import gov.caixa.simuladorservice.entity.simulacao.SimulacaoTipoEntity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
@@ -13,8 +13,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class SimulacaoMapper {
 
-    public Simulacao criarSimulacao(SimulacaoRequestDto request, Produto produto, long tempoRespostaMs) {
-        return Simulacao.builder()
+    public SimulacaoEntity criarSimulacao(SimulacaoRequestDto request, ProdutoExternoEntity produto, long tempoRespostaMs) {
+        return SimulacaoEntity.builder()
                 .produto(produto.getNoProduto())
                 .codigoProduto(produto.getCoProduto())
                 .dataSimulacao(LocalDate.now())
@@ -24,7 +24,7 @@ public class SimulacaoMapper {
                 .build();
     }
 
-    public SimulacaoResponseDto montarRetornoSimulacao(Produto produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price, Simulacao simulacao) {
+    public SimulacaoResponseDto montarRetornoSimulacao(ProdutoExternoEntity produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price, SimulacaoEntity simulacao) {
         SimulacaoResponseDto response = new SimulacaoResponseDto();
         response.setIdSimulacao(simulacao.getId());
         response.setCodigoProduto(produto.getCoProduto().longValue());
@@ -34,7 +34,7 @@ public class SimulacaoMapper {
         return response;
     }
 
-    public SimulacaoResumoDto mapearParaResumo(Simulacao simulacao) {
+    public SimulacaoResumoDto mapearParaResumo(SimulacaoEntity simulacao) {
         Integer prazo = simulacao.getTipos().isEmpty() ? null : simulacao.getTipos().get(0).getPrazo().intValue();
 
         SimulacaoResumoDto dto = new SimulacaoResumoDto();
@@ -63,23 +63,23 @@ public class SimulacaoMapper {
                 .build();
     }
 
-    public Map<LocalDate, Map<String, List<Simulacao>>> agruparPorDataEProduto(List<Simulacao> simulacoes) {
+    public Map<LocalDate, Map<String, List<SimulacaoEntity>>> agruparPorDataEProduto(List<SimulacaoEntity> simulacoes) {
         return simulacoes.stream()
                 .collect(Collectors.groupingBy(
-                        Simulacao::getDataSimulacao,
-                        Collectors.groupingBy(Simulacao::getProduto)
+                        SimulacaoEntity::getDataSimulacao,
+                        Collectors.groupingBy(SimulacaoEntity::getProduto)
                 ));
     }
 
-    public List<SimulacaoTipo> filtrarTipos(List<Simulacao> simulacoes, String tipo) {
+    public List<SimulacaoTipoEntity> filtrarTipos(List<SimulacaoEntity> simulacoes, String tipo) {
         return simulacoes.stream()
                 .flatMap(s -> s.getTipos().stream())
                 .filter(t -> tipo.equalsIgnoreCase(t.getTipoSimulacao()))
                 .toList();
     }
 
-    public SimulacaoProdutoDto montarDtoProduto(String nomeProduto, List<Simulacao> simulacoesProduto,
-                                                List<SimulacaoTipo> tiposSAC, List<SimulacaoTipo> tiposPRICE,
+    public SimulacaoProdutoDto montarDtoProduto(String nomeProduto, List<SimulacaoEntity> simulacoesProduto,
+                                                List<SimulacaoTipoEntity> tiposSAC, List<SimulacaoTipoEntity> tiposPRICE,
                                                 BigDecimal taxaMediaJuroSAC, BigDecimal taxaMediaJuroPRICE,
                                                 BigDecimal valorMedioPrestacaoSAC, BigDecimal valorMedioPrestacaoPRICE,
                                                 BigDecimal valorTotalCreditoSAC, BigDecimal valorTotalCreditoPRICE,
