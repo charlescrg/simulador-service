@@ -1,4 +1,4 @@
-package gov.caixa.simuladorservice.telemetria;
+package gov.caixa.simuladorservice.metric;
 
 import gov.caixa.simuladorservice.dto.EndpointTelemetriaDto;
 import gov.caixa.simuladorservice.dto.TelemetriaResponseDto;
@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Provider
 @Priority(1)
-public class TelemetriaInterceptor implements ContainerRequestFilter, ContainerResponseFilter {
+public class MetricInterceptor implements ContainerRequestFilter, ContainerResponseFilter {
 
     @Inject
     MetricRegistry registry;
