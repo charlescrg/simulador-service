@@ -43,6 +43,10 @@ public class Simulacao {
     @Schema(description = "Valor total de crédito calculado na simulação", example = "16000.00")
     private BigDecimal valorTotalCredito;
 
+    @Column(name = "CODIGO_PRODUTO")
+    @Schema(description = "Código do produto de empréstimo", example = "1")
+    private Integer codigoProduto;
+
     @OneToMany(mappedBy = "simulacao", cascade = CascadeType.ALL)
     private List<SimulacaoTipo> tipos;
 }
