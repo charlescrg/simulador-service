@@ -1,26 +1,29 @@
 package gov.caixa.simuladorservice.service;
 
-import gov.caixa.simuladorservice.entity.Produto;
-import gov.caixa.simuladorservice.repository.ProdutoRepository;
-import io.quarkus.security.Authenticated;
+import gov.caixa.simuladorservice.entity.produto.ProdutoExternoEntity;
+import gov.caixa.simuladorservice.repository.ProdutoExternoRepository;
+import io.quarkus.agroal.DataSource;
+import io.quarkus.hibernate.orm.PersistenceUnit;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-@ApplicationScoped
-@Tag(name = "Produtos", description = "Serviço para operações com produtos")
-public class ProdutoService extends GenericServiceImpl<Produto, Integer> {
+import java.util.List;
 
-    @Inject
-    public ProdutoService(ProdutoRepository produtoRepository) {
-        super(produtoRepository);
+@ApplicationScoped
+@Tag(name = "Produtos", description = "Serviço para operações com produtos")public class ProdutoService {
+
+    @DataSource("external")
+    @PersistenceUnit("external")
+    private final ProdutoExternoRepository produtoExternoRepository;
+
+    public ProdutoService(@PersistenceUnit("external")  ProdutoExternoRepository produtoExternoRepository) {
+        this.produtoExternoRepository = produtoExternoRepository;
     }
 
-    @Override
     @Transactional
-    public Produto atualizar(Integer id, Produto produtoAtualizado) {
-        Produto produto = repository.findById(id);
+    public ProdutoExternoEntity atualizar(Integer id, ProdutoExternoEntity produtoAtualizado) {
+        ProdutoExternoEntity produto = produtoExternoRepository.findById(id);
         if (produto != null) {
             if (produtoAtualizado.getNoProduto() != null) {
                 produto.setNoProduto(produtoAtualizado.getNoProduto());
@@ -40,7 +43,27 @@ public class ProdutoService extends GenericServiceImpl<Produto, Integer> {
             if (produtoAtualizado.getVrMaximo() != null) {
                 produto.setVrMaximo(produtoAtualizado.getVrMaximo());
             }
+            produtoExternoRepository.persist(produto);
         }
         return produto;
+    }
+
+    @Transactional
+    public void sincronizarProdutosExternos() {
+        List<ProdutoExternoEntity> produtosExternos = produtoExternoRepository.listarTodos();
+        for (ProdutoExternoEntity produtoExternoEntity : produtosExternos) {
+            if (produtoExternoRepository.findById(produtoExternoEntity.getCoProduto()) == null) {
+                ProdutoExternoEntity produto = ProdutoExternoEntity.builder()
+                        .coProduto(produtoExternoEntity.getCoProduto())
+                        .noProduto(produtoExternoEntity.getNoProduto())
+                        .pcTaxaJuros(produtoExternoEntity.getPcTaxaJuros())
+                        .nuMinimoMeses(produtoExternoEntity.getNuMinimoMeses())
+                        .nuMaximoMeses(produtoExternoEntity.getNuMaximoMeses())
+                        .vrMinimo(produtoExternoEntity.getVrMinimo())
+                        .vrMaximo(produtoExternoEntity.getVrMaximo())
+                        .build();
+                produtoExternoRepository.persist(produto);
+            }
+        }
     }
 }
