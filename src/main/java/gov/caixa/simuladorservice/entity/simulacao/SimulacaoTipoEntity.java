@@ -1,5 +1,6 @@
-package gov.caixa.simuladorservice.entity;
+package gov.caixa.simuladorservice.entity.simulacao;
 
+import io.quarkus.agroal.DataSource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -12,8 +13,9 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "SIMULACAOTIPO", schema = "dbo")
-public class SimulacaoTipo {
+@DataSource("local")
+@Table(name = "SIMULACAOTIPO")
+public class SimulacaoTipoEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +34,7 @@ public class SimulacaoTipo {
     @ManyToOne
     @JoinColumn(name = "SIMULACAO_ID", nullable = false)
     @Schema(description = "Simulação associada")
-    private Simulacao simulacao;
+    private SimulacaoEntity simulacao;
 
     @Column(name = "VALOR_MEDIO_PRESTACAO")
     private BigDecimal valorMedioPrestacao;

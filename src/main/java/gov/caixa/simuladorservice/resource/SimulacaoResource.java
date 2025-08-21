@@ -1,8 +1,9 @@
 package gov.caixa.simuladorservice.resource;
 
 import gov.caixa.simuladorservice.dto.*;
-import gov.caixa.simuladorservice.service.SimulacaoService;
+import gov.caixa.simuladorservice.exception.SimulacaoIndisponivelException;
 import gov.caixa.simuladorservice.service.EventService;
+import gov.caixa.simuladorservice.service.SimulacaoService;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -14,7 +15,6 @@ import jakarta.ws.rs.core.*;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
-import org.eclipse.microprofile.openapi.annotations.media.ExampleObject;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -140,11 +140,16 @@ public class SimulacaoResource {
             log.info("Simulação concluída com sucesso para usuário={}", usuario);
             eventService.enviarEvento(resposta.toString(), finalCorrelationId);
             return Response.ok(resposta).build();
+        } catch (SimulacaoIndisponivelException e) {
+            log.warn("Fallback acionado: {}", e.getMessage());
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(e.getMessage()).build();
         } catch (Exception e) {
             log.error("Erro na simulação para usuário={} IP={}", usuario, finalIp, e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Erro interno ao processar a simulação").build();
         }
+
 
     }
 

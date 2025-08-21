@@ -1,8 +1,10 @@
 package gov.caixa.simuladorservice.entity.produto;
 
-import io.quarkus.agroal.DataSource;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.*;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -15,7 +17,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@DataSource("external")
 @Schema(description = "Entidade que representa um produto de empréstimo no banco externo")
 public class ProdutoExternoEntity extends PanacheEntityBase {
 

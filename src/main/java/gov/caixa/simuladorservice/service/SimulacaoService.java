@@ -4,13 +4,14 @@ import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.entity.produto.ProdutoExternoEntity;
 import gov.caixa.simuladorservice.entity.simulacao.SimulacaoEntity;
 import gov.caixa.simuladorservice.entity.simulacao.SimulacaoTipoEntity;
+import gov.caixa.simuladorservice.exception.SimulacaoIndisponivelException;
 import gov.caixa.simuladorservice.mapper.SimulacaoMapper;
 import gov.caixa.simuladorservice.repository.ProdutoExternoRepository;
 import gov.caixa.simuladorservice.repository.SimulacaoRepository;
-import io.quarkus.agroal.DataSource;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.PersistenceUnit;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
@@ -18,7 +19,10 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -26,7 +30,7 @@ import java.util.stream.Collectors;
 public class SimulacaoService {
 
     @Inject
-    @DataSource("local")
+    @PersistenceUnit(unitName = "local")
     SimulacaoRepository simulacaoRepository;
 
     @Inject
@@ -36,7 +40,7 @@ public class SimulacaoService {
     SimulacaoMapper simulacaoMapper;
 
     @Inject
-    @DataSource("external")
+    @PersistenceUnit(unitName = "external")
     ProdutoExternoRepository produtoExternoRepository;
 
 
@@ -130,13 +134,7 @@ public class SimulacaoService {
     }
 
     public SimulacaoResponseDto simularFallback(SimulacaoRequestDto request, String correlationId) {
-        log.warn(String.format("Fallback acionado | correlationId=%s | dados=%s", correlationId, request));
-        // TODO: Aqui você poderia salvar a requisição em uma fila para reprocessamento posterior
-
-        SimulacaoResponseDto fallback = new SimulacaoResponseDto();
-        fallback.setDescricaoProduto("Simulação indisponível no momento. Sua solicitação será reprocessada.");
-        fallback.setResultadoSimulacao(Collections.emptyList());
-        return fallback;
+        throw new SimulacaoIndisponivelException("Banco indisponível");
     }
 
     private Optional<ProdutoExternoEntity> buscarProdudoCompativel(SimulacaoRequestDto request) {

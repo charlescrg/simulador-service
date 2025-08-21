@@ -1,6 +1,5 @@
 package gov.caixa.simuladorservice.entity.simulacao;
 
-import io.quarkus.agroal.DataSource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,13 +9,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Entity
-@Table(name = "SIMULACAO", schema = "dbo")
+@Table(name = "SIMULACAO")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@DataSource("local")
 @Schema(description = "Entidade que representa uma simulação de produto de empréstimo")
 public class SimulacaoEntity {
 

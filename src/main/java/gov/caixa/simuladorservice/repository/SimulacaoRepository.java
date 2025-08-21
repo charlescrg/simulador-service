@@ -1,26 +1,19 @@
 package gov.caixa.simuladorservice.repository;
 
 import gov.caixa.simuladorservice.entity.simulacao.SimulacaoEntity;
-import io.quarkus.agroal.DataSource;
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
 
 import java.util.List;
 
 @ApplicationScoped
-public class SimulacaoRepository {
-
-    @PersistenceContext(unitName = "local")
-    EntityManager em;
+public class SimulacaoRepository implements PanacheRepositoryBase<SimulacaoEntity, Integer> {
 
     public List<SimulacaoEntity> listarTodas() {
-        TypedQuery<SimulacaoEntity> query = em.createQuery("SELECT s FROM SimulacaoEntity s", SimulacaoEntity.class);
-        return query.getResultList();
+        return listAll();
     }
 
     public void salvar(SimulacaoEntity simulacao) {
-        em.persist(simulacao);
+        persist(simulacao);
     }
 }
