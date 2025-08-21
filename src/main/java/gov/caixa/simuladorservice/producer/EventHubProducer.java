@@ -12,6 +12,7 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import redis.clients.jedis.JedisPool;
 
 import java.util.Collections;
 
@@ -23,6 +24,9 @@ public class EventHubProducer {
     @Inject
     @ConfigProperty(name = "eventhub.connection-string")
     String connectionString;
+
+    @Inject
+    JedisPool jedisPool;
 
     private EventHubProducerClient producer;
 
@@ -39,7 +43,6 @@ public class EventHubProducer {
         }
     }
 
-
     @CircuitBreaker(
             requestVolumeThreshold = 4,
             failureRatio = 0.75,
@@ -52,17 +55,34 @@ public class EventHubProducer {
             LOG.warnf("EventHubProducer não inicializado, evento não enviado | correlationId=%s", correlationId);
             return;
         }
+        if (isDuplicate(correlationId)) {
+            LOG.warnf("Evento duplicado detectado, não enviado | correlationId=%s", correlationId);
+            return;
+        }
         try {
             EventData eventData = new EventData(mensagemJson);
             eventData.getProperties().put("correlationId", correlationId);
 
             producer.send(Collections.singletonList(eventData));
+            storeCorrelationId(correlationId);
 
             LOG.infof("Evento enviado | correlationId=%s | payload=%s", correlationId, mensagemJson);
         } catch (AmqpException e) {
             LOG.warnf(e, "Falha ao enviar evento no Event Hub | correlationId=%s", correlationId);
         } catch (Exception e) {
             LOG.errorf(e, "Erro inesperado ao enviar evento | correlationId=%s", correlationId);
+        }
+    }
+
+    private boolean isDuplicate(String correlationId) {
+        try (var jedis = jedisPool.getResource()) {
+            return jedis.exists(correlationId);
+        }
+    }
+
+    private void storeCorrelationId(String correlationId) {
+        try (var jedis = jedisPool.getResource()) {
+            jedis.setex(correlationId, 600, "1"); // Expira em 10 minutos
         }
     }
 
