@@ -29,5 +29,16 @@ services:
     volumes:
       - grafana-storage:/var/lib/grafana
 
+  k6:
+    image: grafana/k6
+    container_name: k6
+    volumes:
+      - ./k6_test_script.js:/scripts/k6_test_script.js
+    entrypoint: ["k6", "run", "/scripts/k6_test_script.js"]
+    depends_on:
+      - simulador-service
+    environment:
+      - K6_NO_SETUP=true
+
 volumes:
   grafana-storage:
