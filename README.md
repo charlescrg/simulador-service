@@ -37,25 +37,24 @@ Simulador-Service (Hackathon VITEC)
    5. Acesse a API:
    
       Localmente (ambiente de desenvolvimento):
-	         http://localhost:8080/api/vi/simulacao
-
-   
-   6. Acesse a documentação Swagger:
-   
-        Para acessar a documentação quando estiver rodando o servidor localmente.
-            http://localhost:8080/swagger-ui
+	         http://localhost:8080/api/v1/simulacoes
 
 ## Testes com Postman
-   Importe a coleção Postman disponível em:
-      [aqui](postman/simulador-service.postman_collection.json) 
+Importe a coleção Postman disponível em:
+[aqui](postman/simulador-service.postman_collection.json)
 
+
+## Documentação da API  
+   Acesse a documentação Swagger:
+            http://localhost:8080/swagger-ui
+        
+         Obs. Se quiser testar via swagger, use o token JWT já incluso na collection do Postman para testes
 
 ### Autenticação da API
 
       Esta API usa **JWT (JSON Web Token)** para autenticação. 
       Todos os endpoints requerem um token JWT válido no header `Authorization`.
 	  Para fins de avaliação a collection já está com o token, já que este projeto não vai gerá-lo, apenas validar.
-
 
  **Aviso de Segurança**
 
@@ -107,18 +106,25 @@ O endpoint de simulação está protegido com:
 	  - Diminui o processamento desnecessário de cálculos.
 	  - Melhora o desempenho geral do serviço.
 
-## Monitoramento 
+## Monitoramento
 
-	Este projeto inclui uma infraestrutura de observabilidade utilizando Prometheus e Grafana.
-	
-	- Prometheus
-		Prometheus coleta métricas da aplicação Quarkus expostas no endpoint /api/v1/telemetria.
-			- Essas métricas incluem tempo de resposta e volume de requisições.
-   		Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
+Este projeto inclui uma infraestrutura de observabilidade utilizando Prometheus e Grafana.
 
-		   - Como usar:
-			 		docker-compose up -d
-		 
+- **Prometheus**  
+  Prometheus coleta métricas da aplicação Quarkus expostas no endpoint `/metrics`.
+    - Essas métricas incluem tempo de resposta e volume de requisições.
+    - Acesse o Prometheus em: [http://localhost:9090](http://localhost:9090)
+
+  - **Grafana**  
+    Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
+      - Acesse o Grafana em: [http://localhost:3000](http://localhost:3000)
+
+  - **Como usar:**
+    ```bash
+    docker-compose up -d
+    ```
+
+//TODO		 
 ## Testes de Carga com K6
 
 	Este projeto inclui um script de teste de carga usando K6, localizado na raiz como `k6_test_script.js`.
