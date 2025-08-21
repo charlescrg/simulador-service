@@ -39,6 +39,13 @@ services:
       - simulador-service
     environment:
       - K6_NO_SETUP=true
-
+    
+  redis:
+      image: redis:7
+      container_name: redis
+      ports:
+        - "6379:6379"
+      restart: always
+      
 volumes:
   grafana-storage:
