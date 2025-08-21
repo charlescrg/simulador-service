@@ -10,7 +10,7 @@ export let options = {
 };
 
 export default function () {
-    let res = http.get('http://localhost:8080/telemetria');
+    let res = http.get('http://localhost:8080/metrics');
     check(res, {
         'status is 200': (r) => r.status === 200,
         'response time < 500ms': (r) => r.timings.duration < 500,
