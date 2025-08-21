@@ -60,18 +60,13 @@ jobs:
           echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
           source ~/.bashrc
 
-      - name: Criar banco de dados
+      - name: Verificar conexão com o SQL Server
         run: |
           for i in {1..30}; do
             /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password23 -Q "SELECT 1" && break
             echo "Aguardando SQL Server..."
             sleep 2
           done
-          /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password23 -i init-db/init.sql
-
-      - name: Executar script init.sql
-        run: |
-          /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Password23 -d hack -i init-db/init.sql
 
       - name: Build com Maven
         run: mvn clean verify -Dquarkus.analytics.enabled=false
