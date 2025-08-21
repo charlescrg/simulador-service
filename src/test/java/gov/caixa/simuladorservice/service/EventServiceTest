@@ -1,0 +1,20 @@
+package gov.caixa.simuladorservice.service;
+
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+import gov.caixa.simuladorservice.producer.EventHubProducer;
+import org.eclipse.microprofile.context.ManagedExecutor;
+
+class EventServiceTest {
+    @Test
+    void testEnviarEventoAsync() {
+        EventHubProducer producer = mock(EventHubProducer.class);
+        ManagedExecutor executor = Runnable::run;
+        EventService service = new EventService();
+        service.eventHubProducer = producer;
+        service.executor = executor;
+        service.enviarEvento("msg", "corrId");
+        verify(producer).enviarEvento("msg", "corrId");
+    }
+}
+
