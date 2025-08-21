@@ -108,33 +108,32 @@ O endpoint de simulação está protegido com:
 
 ## Observabilidade
 
-    Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, logging e tracing.
-    
-    **Métricas:**
-    
-    - **Prometheus**  
-      Prometheus coleta métricas da aplicação Quarkus expostas no endpoint `/metrics`.
-        - Essas métricas incluem tempo de resposta e volume de requisições.
-        - Acesse o Prometheus em: [http://localhost:9090](http://localhost:9090)
-    
-      - **Grafana**  
-        Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
-          - Acesse o Grafana em: [http://localhost:3000](http://localhost:3000)
-    
-      - **Como usar:**
-        ```bash
-        docker-compose up -d
-        ```
-    
-    **Logging**
-        Implementado com SLF4J para registrar eventos importantes da aplicação, incluindo erros e informações de auditoria.
-        Os logs incluem informações como correlationId, usuário e parâmetros da requisição, garantindo rastreabilidade.
+Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, logging e tracing.
 
-	//TODO	
-    **Tracing**
-        Configurado com OpenTelemetry para rastrear requisições distribuídas.
-        Os dados de tracing são enviados para o Jaeger, permitindo a análise detalhada do fluxo de requisições.
-        Acesse o Jaeger em: [http://localhost:16686](http://localhost:16686)
+**Métricas:**
+
+- **Prometheus**  
+  Prometheus coleta métricas da aplicação Quarkus expostas no endpoint `/metrics`.
+    - Essas métricas incluem tempo de resposta e volume de requisições.
+    - Acesse o Prometheus em: [http://localhost:9090](http://localhost:9090)
+
+  - **Grafana**  
+    Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
+      - Acesse o Grafana em: [http://localhost:3000](http://localhost:3000)
+
+  - **Como usar:**
+    ```bash
+    docker-compose up -d
+    ```
+
+**Logging**
+    Implementado com SLF4J para registrar eventos importantes da aplicação, incluindo erros e informações de auditoria.
+    Os logs incluem informações como correlationId, usuário e parâmetros da requisição, garantindo rastreabilidade.
+
+**Tracing**
+    Configurado com OpenTelemetry para rastrear requisições distribuídas.
+    Os dados de tracing são enviados para o Jaeger, permitindo a análise detalhada do fluxo de requisições.
+    Acesse o Jaeger em: http://localhost:16686
 
 
 //TODO		 
