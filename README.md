@@ -115,7 +115,7 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando Prometheus 
     - Essas métricas incluem tempo de resposta e volume de requisições.
     - Acesse o Prometheus em: [http://localhost:9090](http://localhost:9090)
 
-  - **Grafana**  
+- **Grafana**  
     Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
       - Acesse o Grafana em: [http://localhost:3000](http://localhost:3000)
 
@@ -124,22 +124,17 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando Prometheus 
     docker-compose up -d
     ```
 
-//TODO		 
 ## Testes de Carga com K6
 
 	Este projeto inclui um script de teste de carga usando K6, localizado na raiz como `k6_test_script.js`.
 
 ### Como executar:
 
-1. Instale o K6:
-   - macOS: `brew install k6`
-   - Windows: `choco install k6`
-   - Linux: veja documentação oficial
-
-2. Execute o teste:
-   ```bash
-   k6 run k6_test_script.js
-   ```
+	1. Certifique-se de que o Docker e o Docker Compose estão instalados.
+	
+	2. Execute o teste de carga com o seguinte comando:
+	   ```bash
+	   docker-compose up k6
 
  		
 
