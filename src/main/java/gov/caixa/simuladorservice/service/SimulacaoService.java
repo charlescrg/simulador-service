@@ -1,5 +1,8 @@
 package gov.caixa.simuladorservice.service;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import gov.caixa.simuladorservice.config.TracingConfig;
 import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.entity.produto.ProdutoExternoEntity;
 import gov.caixa.simuladorservice.entity.simulacao.SimulacaoEntity;
@@ -48,29 +51,39 @@ public class SimulacaoService {
     @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 1, delay = 5000)
     @Fallback(fallbackMethod = "simularFallback")
     public SimulacaoResponseDto simular(SimulacaoRequestDto request, String correlationId) {
-        long inicio = System.currentTimeMillis();
 
-        ProdutoExternoEntity produto = buscarProduto(request);
-        if (produto == null) {
-            log.warn("Nenhum produto compatível encontrado...");
-            return SimulacaoResponseDto.builder()
-                    .descricaoProduto("Nenhum produto compatível encontrado.")
-                    .build();
+       Tracer tracer = TracingConfig.getTracer();
+       Span span = tracer.spanBuilder("simular").startSpan();
+
+        try (var scope = span.makeCurrent()) {
+            span.setAttribute("correlationId", correlationId);
+
+            long inicio = System.currentTimeMillis();
+
+            ProdutoExternoEntity produto = buscarProduto(request);
+            if (produto == null) {
+                log.warn("Nenhum produto compatível encontrado...");
+                return SimulacaoResponseDto.builder()
+                        .descricaoProduto("Nenhum produto compatível encontrado.")
+                        .build();
+            }
+
+            ResultadoSimulacaoDto sac = simuladorFinanceiroService.calcularSAC(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
+            ResultadoSimulacaoDto price = simuladorFinanceiroService.calcularPRICE(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
+
+            SimulacaoEntity simulacao = simulacaoMapper.criarSimulacao(request, produto, System.currentTimeMillis() - inicio);
+
+            List<SimulacaoTipoEntity> tipos = criarTiposSimulacao(simulacao, produto, sac, price, request);
+            simulacao.setTipos(tipos);
+
+            salvarSimulacao(simulacao);
+
+            SimulacaoResponseDto response = simulacaoMapper.montarRetornoSimulacao(produto, sac, price, simulacao);
+
+            return response;
+        } finally {
+            span.end();
         }
-
-        ResultadoSimulacaoDto sac = simuladorFinanceiroService.calcularSAC(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
-        ResultadoSimulacaoDto price = simuladorFinanceiroService.calcularPRICE(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
-
-        SimulacaoEntity simulacao = simulacaoMapper.criarSimulacao(request, produto, System.currentTimeMillis() - inicio);
-
-        List<SimulacaoTipoEntity> tipos = criarTiposSimulacao(simulacao, produto, sac, price, request);
-        simulacao.setTipos(tipos);
-
-        salvarSimulacao(simulacao);
-
-        SimulacaoResponseDto response = simulacaoMapper.montarRetornoSimulacao(produto, sac, price, simulacao);
-
-        return response;
     }
 
     @Transactional
