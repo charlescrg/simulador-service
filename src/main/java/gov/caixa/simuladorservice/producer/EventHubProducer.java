@@ -98,7 +98,15 @@ public class EventHubProducer {
         }
     }
 
-    public void fallbackEnviarEvento(String mensagemJson, String correlationId) {
-        LOG.warnf("Fallback ativado: evento não enviado para EventHub | correlationId=%s", correlationId);
+    public void fallbackEnviarEvento(String mensagemJson, String correlationId, Throwable t) {
+        // Pega a causa raiz da exceção
+        Throwable cause = t;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        String erroMsg = cause.getMessage();
+
+        LOG.warnf("Fallback ativado: evento não enviado | correlationId=%s | erro=%s",
+                correlationId, erroMsg);
     }
 }

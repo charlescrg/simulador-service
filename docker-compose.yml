@@ -1,14 +1,23 @@
-version: '3.7'
-
 services:
-  sqlserver:
-    build: .
-    container_name: sqlserver-local
+  postgres:
+    image: bitnami/postgresql:15
+    container_name: postgres-local
     ports:
-      - "1433:1433"
+      - "5432:5432"
     environment:
-      ACCEPT_EULA: "Y"
-      SA_PASSWORD: "Password23"
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRESQL_ENABLE_REMOTE_CONNECTIONS: "yes"
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    restart: always
+
+  redis:
+    image: redis:7
+    container_name: redis-local
+    ports:
+      - "6379:6379"
     restart: always
 
   prometheus:
@@ -25,7 +34,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
       - grafana-storage:/var/lib/grafana
 
@@ -35,17 +44,8 @@ services:
     volumes:
       - ./k6_test_script.js:/scripts/k6_test_script.js
     entrypoint: ["k6", "run", "/scripts/k6_test_script.js"]
-    depends_on:
-      - simulador-service
     environment:
-      - K6_NO_SETUP=true
-    
-  redis:
-      image: redis:7
-      container_name: redis
-      ports:
-        - "6379:6379"
-      restart: always
+      K6_NO_SETUP: "true"
 
   jaeger:
     image: jaegertracing/all-in-one:1.46
@@ -61,6 +61,6 @@ services:
       - "14269:14269"
       - "9411:9411"
     restart: always
-      
+
 volumes:
   grafana-storage:
