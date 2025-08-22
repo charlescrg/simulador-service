@@ -7,8 +7,6 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 
-import java.util.concurrent.TimeUnit;
-
 public class TracingConfig {
 
     public static void init() {
