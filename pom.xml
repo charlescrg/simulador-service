@@ -200,6 +200,7 @@
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-sdk</artifactId>
       <version>1.30.0</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
