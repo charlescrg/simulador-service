@@ -79,7 +79,6 @@ public class SimulacaoMapper {
     }
 
     public SimulacaoProdutoDto montarDtoProduto(String nomeProduto, List<SimulacaoEntity> simulacoesProduto,
-                                                List<SimulacaoTipoEntity> tiposSAC, List<SimulacaoTipoEntity> tiposPRICE,
                                                 BigDecimal taxaMediaJuroSAC, BigDecimal taxaMediaJuroPRICE,
                                                 BigDecimal valorMedioPrestacaoSAC, BigDecimal valorMedioPrestacaoPRICE,
                                                 BigDecimal valorTotalCreditoSAC, BigDecimal valorTotalCreditoPRICE,
