@@ -67,7 +67,7 @@ public class SimulacaoMapper {
         return simulacoes.stream()
                 .collect(Collectors.groupingBy(
                         SimulacaoEntity::getDataSimulacao,
-                        Collectors.groupingBy(SimulacaoEntity::getProduto)
+                         Collectors.groupingBy(s -> s.getCodigoProduto() + ":" + s.getProduto())
                 ));
     }
 
