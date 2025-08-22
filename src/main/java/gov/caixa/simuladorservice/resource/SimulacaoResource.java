@@ -97,63 +97,45 @@ public class SimulacaoResource {
             )
     })
     @Authenticated
-    public Response simular(@Valid SimulacaoRequestDto request,
+        public Response simular(@Valid SimulacaoRequestDto request,
                             @Context UriInfo uriInfo,
                             @Context SecurityContext securityContext,
                             @Context HttpHeaders headers,
-                            @Parameter(
-                                    name = "X-Correlation-Id",
-                                    description = "Identificador único para rastreamento da requisição",
-                                    required = false,
-                                    in = ParameterIn.HEADER
-                            )
                             @HeaderParam("X-Correlation-Id") String correlationId) {
 
-        if (correlationId == null || correlationId.isBlank()) {
-            correlationId = UUID.randomUUID().toString();
-        }
-
-        // IP do cliente (primeiro verifica X-Forwarded-For)
-        String ip = headers.getHeaderString("X-Forwarded-For");
-        if (ip == null) {
-            ip = uriInfo.getRequestUri().getHost(); // fallback
-        }
+        String correlationIdFinal = rastrearCorrelationId(correlationId);
+        String ipCliente = extrairIpCliente(headers, uriInfo);
         String usuario = securityContext.getUserPrincipal().getName();
 
-        // Rate limit
-        Bucket bucket = resolveBucket(ip);
-        if (!bucket.tryConsume(1)) {
-            log.warn("Rate limit excedido para IP={} usuário={}", ip, usuario);
+        if (!verificarLimiteRequisicoes(ipCliente)) {
+            log.warn("Rate limit excedido para IP={} usuário={}", ipCliente, usuario);
             return Response.status(Response.Status.TOO_MANY_REQUESTS)
                     .entity("Limite de requisições excedido. Tente novamente mais tarde.")
                     .build();
         }
 
         log.info("Simulação solicitada por: usuário={}, IP={}, valor={}, prazo={}, correlationId={}",
-                usuario, ip, request.getValorDesejado(), request.getPrazo(), correlationId);
-
-        final String finalIp = ip;
-        final String finalCorrelationId = correlationId;
+                usuario, ipCliente, request.getValorDesejado(), request.getPrazo(), correlationIdFinal);
 
         try {
-            SimulacaoResponseDto resposta = simulacaoService.simular(request, finalCorrelationId);
+            SimulacaoResponseDto resposta = simulacaoService.simular(request, correlationIdFinal, usuario);
             log.info("Simulação concluída com sucesso para usuário={}", usuario);
-            eventService.enviarEvento(resposta.toString(), finalCorrelationId);
-            return Response.ok(resposta).build();
+
+            Response response = Response.ok(resposta).build();
+            enviarEvento(resposta.toString(), correlationIdFinal);
+
+            return Response.ok(response).build();
+
         } catch (SimulacaoIndisponivelException e) {
             log.warn("Fallback acionado: {}", e.getMessage());
             return Response.status(Response.Status.SERVICE_UNAVAILABLE)
                     .entity(e.getMessage()).build();
         } catch (Exception e) {
-            log.error("Erro na simulação para usuário={} IP={}", usuario, finalIp, e);
+            log.error("Erro na simulação para usuário={} IP={}", usuario, ipCliente, e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Erro interno ao processar a simulação").build();
         }
-
-
     }
-
-
 
     @GET
     @Path("/listar")
@@ -251,6 +233,32 @@ public class SimulacaoResource {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Erro ao listar valores simulados por produto/dia").build();
         }
+    }
+
+      private String rastrearCorrelationId(String correlationId) {
+        return Optional.ofNullable(correlationId)
+                .filter(id -> !id.isBlank())
+                .orElse(UUID.randomUUID().toString());
+    }
+
+    private String extrairIpCliente(HttpHeaders headers, UriInfo uriInfo) {
+        return Optional.ofNullable(headers.getHeaderString("X-Forwarded-For"))
+                .orElse(uriInfo.getRequestUri().getHost());
+    }
+
+    private boolean verificarLimiteRequisicoes(String ipCliente) {
+        Bucket bucket = resolveBucket(ipCliente);
+        return bucket.tryConsume(1);
+    }
+
+    private void enviarEvento(String mensagemJson, String correlationId) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                eventService.enviarEvento(mensagemJson, correlationId);
+            } catch (Exception e) {
+                log.warn("Falha ao enviar evento de simulação (não afeta resposta ao cliente): {}", e.getMessage());
+            }
+        });
     }
 
 }
