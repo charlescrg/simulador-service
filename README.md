@@ -117,14 +117,39 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, 
     - Essas métricas incluem tempo de resposta e volume de requisições.
     - Acesse o Prometheus em: [http://localhost:9090](http://localhost:9090)
 
-  - **Grafana**  
-    Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
-      - Acesse o Grafana em: [http://localhost:3000](http://localhost:3000)
+- **Grafana**  
+   Grafana é usado para visualizar as métricas coletadas pelo Prometheus em dashboards interativos.
+   - Acesse o Grafana em: [http://localhost:3000](http://localhost:3000)
+      
+                1️⃣ Acessar o Grafana
+                    Abra no navegador: http://localhost:3000
+                    Login padrão (definido no Compose):
+                    Usuário: admin
+                    Senha: admin
+                    Você será solicitado a trocar a senha no primeiro login (recomendado).
+            
+                2️⃣ Configurar o datasource
+                    No menu lateral, clique em Configuration → Data Sources.
+                    Clique em Add data source.
+                    Escolha Prometheus. 
+                        Configure:
+                        URL: http://prometheus:9090
 
-  - **Como usar:**
-    ```bash
-    docker-compose up -d
-    ```
+                    Clique em Save & Test.
+            
+                3️⃣ Criar um dashboard 
+                    No menu lateral, clique em + → Dashboard → Add new panel.
+                    Configure a query para métricas do Quarkus, por exemplo: 
+                    Query: http_server_requests_seconds_count (conta de requisições) 
+                    Ajuste Legend para identificar endpoints ou métodos. 
+                    Escolha o tipo de gráfico (Time series, Gauge, Bar, etc.). 
+                    
+                     Clique em Apply.
+
+            - **Como usar:**
+              ```bash
+              docker-compose up -d
+              ```
 
 **Logging**
     Implementado com SLF4J para registrar eventos importantes da aplicação, incluindo erros e informações de auditoria.
