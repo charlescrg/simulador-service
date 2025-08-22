@@ -118,7 +118,7 @@ public class SimulacaoResource {
                 usuario, ipCliente, request.getValorDesejado(), request.getPrazo(), correlationIdFinal);
 
         try {
-            SimulacaoResponseDto resposta = simulacaoService.simular(request, correlationIdFinal, usuario);
+            SimulacaoResponseDto resposta = simulacaoService.simular(request, correlationIdFinal, usuario); //TODO ver auditoria
             log.info("Simulação concluída com sucesso para usuário={}", usuario);
 
             Response response = Response.ok(resposta).build();
