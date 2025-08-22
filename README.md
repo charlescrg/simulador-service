@@ -160,6 +160,18 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, 
     Os dados de tracing são enviados para o Jaeger, permitindo a análise detalhada do fluxo de requisições.
     Acesse o Jaeger em: [http://localhost:14250](http://localhost:14250/)
 
+## Idempotência
+    Garante que executar a mesma operação várias vezes não cause efeitos colaterais extras.
+
+    No projeto, a idempotência é implementada usando Redis via Jedis:
+        Cada evento enviado recebe um correlationId único.
+        Antes de processar/enviar o evento, o sistema verifica no Redis se o correlationId já existe (isDuplicate).
+        Se já existir, o evento não é reprocessado, evitando duplicidade.
+        O correlationId é armazenado com um tempo de expiração (TTL), garantindo que o controle seja temporário e eficiente.
+    
+    Como testar:
+        Ao fazer uma requisição para enviar evento, adicione o header X-Correlation-Id com um valor único.
+        Reenviar a mesma requisição com o mesmo X-Correlation-Id não irá gerar duplicidade, confirmando a idempotência.
 
 //TODO		 
 ## Testes de Carga com K6
