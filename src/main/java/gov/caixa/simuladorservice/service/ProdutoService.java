@@ -46,23 +46,4 @@ public class ProdutoService {
         }
         return produto;
     }
-
-    @Transactional
-    public void sincronizarProdutosExternos() {
-        List<ProdutoExternoEntity> produtosExternos = produtoExternoRepository.listarTodos();
-        for (ProdutoExternoEntity produtoExternoEntity : produtosExternos) {
-            if (produtoExternoRepository.findById(produtoExternoEntity.getCoProduto()) == null) {
-                ProdutoExternoEntity produto = ProdutoExternoEntity.builder()
-                        .coProduto(produtoExternoEntity.getCoProduto())
-                        .noProduto(produtoExternoEntity.getNoProduto())
-                        .pcTaxaJuros(produtoExternoEntity.getPcTaxaJuros())
-                        .nuMinimoMeses(produtoExternoEntity.getNuMinimoMeses())
-                        .nuMaximoMeses(produtoExternoEntity.getNuMaximoMeses())
-                        .vrMinimo(produtoExternoEntity.getVrMinimo())
-                        .vrMaximo(produtoExternoEntity.getVrMaximo())
-                        .build();
-                produtoExternoRepository.persist(produto);
-            }
-        }
-    }
 }
