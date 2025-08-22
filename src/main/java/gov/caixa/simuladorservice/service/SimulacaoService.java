@@ -116,7 +116,7 @@ public class SimulacaoService {
                         BigDecimal valorTotalDesejado = simuladorFinanceiroService.somarValores(entry.getValue().stream().map(SimulacaoEntity::getValorSimulado).toList());
                         Integer codigoProduto = entry.getValue().isEmpty() ? 0 : entry.getValue().get(0).getCodigoProduto();
 
-                        return simulacaoMapper.montarDtoProduto(entry.getKey(), entry.getValue(), tiposSAC, tiposPRICE,
+                        return simulacaoMapper.montarDtoProduto(entry.getKey(), entry.getValue(),
                                 taxaMediaJuroSAC, taxaMediaJuroPRICE,
                                 valorMedioPrestacaoSAC, valorMedioPrestacaoPRICE,
                                 valorTotalCreditoSAC, valorTotalCreditoPRICE,
