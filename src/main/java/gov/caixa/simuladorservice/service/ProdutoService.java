@@ -19,31 +19,4 @@ public class ProdutoService {
     public ProdutoService(ProdutoExternoRepository produtoExternoRepository) {
         this.produtoExternoRepository = produtoExternoRepository;
     }
-
-    @Transactional
-    public ProdutoExternoEntity atualizar(Integer id, ProdutoExternoEntity produtoAtualizado) {
-        ProdutoExternoEntity produto = produtoExternoRepository.findById(id);
-        if (produto != null) {
-            if (produtoAtualizado.getNoProduto() != null) {
-                produto.setNoProduto(produtoAtualizado.getNoProduto());
-            }
-            if (produtoAtualizado.getPcTaxaJuros() != null) {
-                produto.setPcTaxaJuros(produtoAtualizado.getPcTaxaJuros());
-            }
-            if (produtoAtualizado.getNuMinimoMeses() != null) {
-                produto.setNuMinimoMeses(produtoAtualizado.getNuMinimoMeses());
-            }
-            if (produtoAtualizado.getNuMaximoMeses() != null) {
-                produto.setNuMaximoMeses(produtoAtualizado.getNuMaximoMeses());
-            }
-            if (produtoAtualizado.getVrMinimo() != null) {
-                produto.setVrMinimo(produtoAtualizado.getVrMinimo());
-            }
-            if (produtoAtualizado.getVrMaximo() != null) {
-                produto.setVrMaximo(produtoAtualizado.getVrMaximo());
-            }
-            produtoExternoRepository.persist(produto);
-        }
-        return produto;
-    }
 }
