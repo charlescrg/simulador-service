@@ -158,7 +158,7 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, 
 **Tracing**
     Configurado com OpenTelemetry para rastrear requisições distribuídas.
     Os dados de tracing são enviados para o Jaeger, permitindo a análise detalhada do fluxo de requisições.
-    Acesse o Jaeger em: [http://localhost:14250](http://localhost:14250/)
+    Acesse o Jaeger em: [http://localhost:16686/](http://localhost:14250/)
 
 ## Idempotência
     Garante que executar a mesma operação várias vezes não cause efeitos colaterais extras.

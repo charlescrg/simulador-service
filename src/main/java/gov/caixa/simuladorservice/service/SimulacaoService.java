@@ -132,7 +132,6 @@ public class SimulacaoService {
         return response;
     }
 
-    @CacheResult(cacheName = "listarSimulacoes")
     public ListaSimulacoesResponseDto listarSimulacoes() {
         List<SimulacaoEntity> simulacoes = simulacaoRepository.listarTodas();
 
