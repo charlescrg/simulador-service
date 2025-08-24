@@ -1,5 +1,6 @@
 package gov.caixa.simuladorservice.entity.simulacao;
 
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,7 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Schema(description = "Entidade que representa uma simulação de produto de empréstimo")
-public class SimulacaoEntity {
+public class SimulacaoEntity extends PanacheEntityBase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -55,10 +55,12 @@ public class SimulacaoService {
        Tracer tracer = TracingConfig.getTracer();
        Span span = tracer.spanBuilder("simular").startSpan();
 
+        long inicio = System.currentTimeMillis();
+
         try (var scope = span.makeCurrent()) {
             span.setAttribute("correlationId", correlationId);
-
-            long inicio = System.currentTimeMillis();
+            span.setAttribute("valorDesejado", String.valueOf(request.getValorDesejado()));
+            span.setAttribute("prazo", request.getPrazo());
 
             ProdutoExternoEntity produto = buscarProduto(request);
             if (produto == null) {

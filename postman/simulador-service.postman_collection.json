@@ -163,7 +163,7 @@
 							"raw": ""
 						},
 						"url": {
-							"raw": "{{baseURL}}/api/v1/telemetria",
+							"raw": "{{baseURL}}/api/v1/telemetria/listar",
 							"host": [
 								"{{baseURL}}"
 							],
