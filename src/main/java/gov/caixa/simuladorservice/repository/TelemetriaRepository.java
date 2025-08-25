@@ -10,18 +10,20 @@ import java.util.List;
 public class TelemetriaRepository implements PanacheRepository<TelemetriaEntity> {
 
     public List<Object[]> listar() {
-        return getEntityManager().createQuery(
-                        "SELECT t.data, t.nomeApi, " +
-                                "SUM(t.qtdRequisicoes), " +
-                                "AVG(t.tempoMedio), " +
-                                "MIN(t.tempoMinimo), " +
-                                "MAX(t.tempoMaximo), " +
-                                "CASE WHEN SUM(t.qtdRequisicoes) > 0 " +
-                                "THEN SUM(t.qtdRequisicoes * t.percentualSucesso)/SUM(t.qtdRequisicoes) " +
-                                "ELSE 0 END " +
-                                "FROM TelemetriaEntity t " +
-                                "GROUP BY t.data, t.nomeApi " +
-                                "ORDER BY t.data, t.nomeApi", Object[].class)
+        String jpql = """
+            SELECT t.data, t.nomeApi,
+                   COUNT(t) as qtdRequisicoes,
+                   AVG(t.tempoMs),
+                   MIN(t.tempoMs),
+                   MAX(t.tempoMs),
+                   SUM(t.sucesso) * 1.0 / COUNT(t) * 100.0
+            FROM TelemetriaEntity t
+            GROUP BY t.data, t.nomeApi
+            ORDER BY t.data, t.nomeApi
+            """;
+
+        return getEntityManager()
+                .createQuery(jpql, Object[].class)
                 .getResultList();
     }
 }

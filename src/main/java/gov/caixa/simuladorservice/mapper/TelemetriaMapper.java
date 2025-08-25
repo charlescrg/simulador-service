@@ -1,28 +1,25 @@
 package gov.caixa.simuladorservice.mapper;
 
-import gov.caixa.simuladorservice.dto.EndpointTelemetriaDto;
+import gov.caixa.simuladorservice.dto.TelemetriaRequestDto;
 import gov.caixa.simuladorservice.entity.simulacao.TelemetriaEntity;
-
 import jakarta.enterprise.context.ApplicationScoped;
+
 import java.time.LocalDate;
 
 @ApplicationScoped
 public class TelemetriaMapper {
 
-    public TelemetriaEntity mapDtoParaEntity(EndpointTelemetriaDto dto, LocalDate data) {
-        TelemetriaEntity entity = TelemetriaEntity.builder()
-                .nomeApi(mapPathToNomeApi(dto.getNomeApi()))
-                .qtdRequisicoes(dto.getQtdRequisicoes())
-                .tempoMedio(dto.getTempoMedio())
-                .tempoMinimo(dto.getTempoMinimo())
-                .tempoMaximo(dto.getTempoMaximo())
-                .percentualSucesso(dto.getPercentualSucesso())
-                .data(data)
-                .build();
+    public TelemetriaEntity mapDtoParaEntity(TelemetriaRequestDto dto, LocalDate data) {
+        TelemetriaEntity entity = new TelemetriaEntity();
+        entity.setNomeApi(mapPathToNomeApi(dto.getNomeApi()));
+        entity.setTempoMs(dto.getTempoMs());
+        entity.setSucesso(dto.getSucesso() != null && dto.getSucesso() > 0 ? 1 : 0);
+        entity.setData(data != null ? data : LocalDate.now());
         return entity;
     }
 
-    private String mapPathToNomeApi(String path) {
+
+    public String mapPathToNomeApi(String path) {
         return switch (path) {
             case "/api/v1/simulacoes" -> "Simulacao";
             case "/api/v1/simulacoes/listar" -> "ListarSimulacoes";
@@ -32,4 +29,3 @@ public class TelemetriaMapper {
         };
     }
 }
-
