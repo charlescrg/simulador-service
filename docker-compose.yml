@@ -3,14 +3,16 @@ services:
     image: bitnami/postgresql:15
     container_name: postgres-local
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 12345
       POSTGRESQL_ENABLE_REMOTE_CONNECTIONS: "yes"
+      TZ: America/Sao_Paulo
+      POSTGRESQL_TIMEZONE: America/Sao_Paulo
     volumes:
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - postgres-data:/bitnami/postgresql
     restart: always
 
   redis:
@@ -18,6 +20,10 @@ services:
     container_name: redis-local
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      retries: 5
     restart: always
 
   prometheus:
@@ -62,5 +68,28 @@ services:
       - "9411:9411"
     restart: always
 
+  simulador-service:
+    image: maven:3.9.3-eclipse-temurin-20
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ~/.m2:/root/.m2
+    command: ./mvnw quarkus:dev -Ddebug=5005
+    ports:
+        - "8080:8080"
+        - "5005:5005"
+    environment:
+      TZ: America/Sao_Paulo
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=America/Sao_Paulo"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUARKUS_PROFILE: dev
+      EVENTHUB_CONNECTION_STRING: "Endpoint=sb://eventhack.servicebus.windows.net/;SharedAccessKeyName=hack;SharedAccessKey=HeHeVaVqyVkntO2FnjQcs2Ilh/4MUDo4y+AEhKp8z+g=;EntityPath=simulacoes"
+    depends_on:
+      - postgres
+      - redis
+      - jaeger
+
 volumes:
   grafana-storage:
+  postgres-data:

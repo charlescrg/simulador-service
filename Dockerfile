@@ -1,17 +1,13 @@
-# dump build stage
-FROM postgres:11-alpine as dumper
+# Usando a imagem do Quarkus JVM
+FROM quay.io/quarkus/ubi-quarkus-jvm:3.12
 
-COPY init.sql /docker-entrypoint-initdb.d/
+WORKDIR /app
 
-RUN ["sed", "-i", "s/exec \"$@\"/echo \"skipping...\"/", "/usr/local/bin/docker-entrypoint.sh"]
+# Copia o jar da aplicação
+COPY target/simulador-service-1.0.0-SNAPSHOT-runner.jar /app/app.jar
 
-ENV POSTGRES_USER=postgres
-ENV POSTGRES_PASSWORD=postgres
-ENV PGDATA=/data
+# Expõe as portas do Quarkus e da depuração
+EXPOSE 8080 5005
 
-RUN ["/usr/local/bin/docker-entrypoint.sh", "postgres"]
-
-# final build stage
-FROM postgres:11-alpine
-
-COPY --from=dumper /data $PGDATA
+# Comando para rodar a aplicação com debug remoto na porta 5005
+CMD ["java", "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005", "-jar", "/app/app.jar"]

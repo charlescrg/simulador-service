@@ -1,9 +1,8 @@
 package gov.caixa.simuladorservice.service;
 
-import gov.caixa.simuladorservice.dto.*;
+import gov.caixa.simuladorservice.dto.SimulacaoRequestDto;
 import gov.caixa.simuladorservice.entity.produto.ProdutoExternoEntity;
-import gov.caixa.simuladorservice.entity.simulacao.SimulacaoEntity;
-import gov.caixa.simuladorservice.exception.SimulacaoIndisponivelException;
+import gov.caixa.simuladorservice.exception.ProdutoNaoEncontradoException;
 import gov.caixa.simuladorservice.mapper.SimulacaoMapper;
 import gov.caixa.simuladorservice.repository.ProdutoExternoRepository;
 import gov.caixa.simuladorservice.repository.SimulacaoRepository;
@@ -12,10 +11,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import java.math.BigDecimal;
+
 import java.util.Collections;
+
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 class SimulacaoServiceTest {
     @Mock
@@ -38,16 +38,18 @@ class SimulacaoServiceTest {
     @Test
     void testSimularProdutoNaoEncontrado() {
         SimulacaoRequestDto request = new SimulacaoRequestDto();
-        when(produtoExternoRepository.listarTodos()).thenReturn(Collections.emptyList());
-        SimulacaoResponseDto response = simulacaoService.simular(request, "corr-id");
-        assertEquals("Nenhum produto compatível encontrado.", response.getDescricaoProduto());
-    }
+        request.setPrazo(12);
 
-    @Test
-    void testSimularFallback() {
-        assertThrows(SimulacaoIndisponivelException.class, () -> {
-            simulacaoService.simularFallback(new SimulacaoRequestDto(), "corr-id");
-        });
+        // Mock do repositório para retornar lista vazia
+        when(produtoExternoRepository.listarTodos()).thenReturn(Collections.emptyList());
+
+        // Verifica se a exceção é lançada
+        ProdutoNaoEncontradoException exception = assertThrows(
+                ProdutoNaoEncontradoException.class,
+                () -> simulacaoService.simular(request, "corr-id")
+        );
+
+        assertEquals("Desculpe! Nenhum produto compatível encontrado.", exception.getMessage());
     }
 
     @Test

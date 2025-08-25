@@ -26,9 +26,6 @@ public class TelemetriaService {
     @Inject
     MetricInterceptor interceptor;
 
-    /**
-     * Salva as métricas do dia no banco e retorna todos os registros agregados.
-     */
     @Transactional
     public List<TelemetriaResponseDto> listarMetricas() {
 

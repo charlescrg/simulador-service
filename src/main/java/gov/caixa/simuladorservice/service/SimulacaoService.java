@@ -1,16 +1,16 @@
 package gov.caixa.simuladorservice.service;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import gov.caixa.simuladorservice.config.TracingConfig;
 import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.entity.produto.ProdutoExternoEntity;
 import gov.caixa.simuladorservice.entity.simulacao.SimulacaoEntity;
 import gov.caixa.simuladorservice.entity.simulacao.SimulacaoTipoEntity;
-import gov.caixa.simuladorservice.exception.SimulacaoIndisponivelException;
+import gov.caixa.simuladorservice.exception.ProdutoNaoEncontradoException;
 import gov.caixa.simuladorservice.mapper.SimulacaoMapper;
 import gov.caixa.simuladorservice.repository.ProdutoExternoRepository;
 import gov.caixa.simuladorservice.repository.SimulacaoRepository;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -18,7 +18,6 @@ import jakarta.persistence.PersistenceUnit;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
-import org.eclipse.microprofile.faulttolerance.Fallback;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,10 +46,12 @@ public class SimulacaoService {
     @PersistenceUnit(unitName = "external")
     ProdutoExternoRepository produtoExternoRepository;
 
+    @Inject
+    EventService eventService;
+
 
     @CacheResult(cacheName = "simulacoes")
     @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 1, delay = 5000)
-    @Fallback(fallbackMethod = "simularFallback")
     public SimulacaoResponseDto simular(SimulacaoRequestDto request, String correlationId) {
 
        Tracer tracer = TracingConfig.getTracer();
@@ -65,9 +67,7 @@ public class SimulacaoService {
             ProdutoExternoEntity produto = buscarProduto(request);
             if (produto == null) {
                 log.warn("Nenhum produto compatível encontrado...");
-                return SimulacaoResponseDto.builder()
-                        .descricaoProduto("Nenhum produto compatível encontrado.")
-                        .build();
+                throw new ProdutoNaoEncontradoException("Desculpe! Nenhum produto compatível encontrado.");
             }
 
             ResultadoSimulacaoDto sac = simuladorFinanceiroService.calcularSAC(request.getValorDesejado(), produto.getPcTaxaJuros(), request.getPrazo());
@@ -82,6 +82,8 @@ public class SimulacaoService {
 
             SimulacaoResponseDto response = simulacaoMapper.montarRetornoSimulacao(produto, sac, price, simulacao);
 
+            enviarEvento(String.valueOf(response), correlationId);
+
             return response;
         } finally {
             span.end();
@@ -93,7 +95,6 @@ public class SimulacaoService {
         simulacaoRepository.salvar(simulacao);
     }
 
-    @CacheResult(cacheName = "listarValoresPorProdutoDia")
     public List<VolumeSimuladoResponseDto> listarValoresPorProdutoDia() {
         List<SimulacaoEntity> simulacoes = simulacaoRepository.listarTodas();
 
@@ -142,13 +143,10 @@ public class SimulacaoService {
                 .collect(Collectors.toList());
         return simulacaoMapper.montarListaSimulacoes(registros);
     }
+
     @Transactional
     public ProdutoExternoEntity buscarProduto(SimulacaoRequestDto request) {
         return buscarProdudoCompativel(request).orElse(null);
-    }
-
-    public SimulacaoResponseDto simularFallback(SimulacaoRequestDto request, String correlationId) {
-        throw new SimulacaoIndisponivelException("Banco indisponível");
     }
 
     private Optional<ProdutoExternoEntity> buscarProdudoCompativel(SimulacaoRequestDto request) {
@@ -173,5 +171,15 @@ public class SimulacaoService {
                 new SimulacaoTipoEntity(null, "SAC", totalSac, simulacao, mediaSac, produto.getPcTaxaJuros(), BigDecimal.valueOf(request.getPrazo())),
                 new SimulacaoTipoEntity(null, "PRICE", totalPrice, simulacao, mediaPrice, produto.getPcTaxaJuros(), BigDecimal.valueOf(request.getPrazo()))
         );
+    }
+
+    private void enviarEvento(String mensagemJson, String correlationId) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                eventService.enviarEvento(mensagemJson, correlationId);
+            } catch (Exception e) {
+                log.warn("Falha ao enviar evento de simulação (não afeta resposta ao cliente): {}", e.getMessage());
+            }
+        });
     }
 }

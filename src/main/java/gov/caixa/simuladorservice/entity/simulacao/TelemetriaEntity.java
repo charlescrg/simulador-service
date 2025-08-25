@@ -2,10 +2,7 @@ package gov.caixa.simuladorservice.entity.simulacao;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.time.LocalDate;
@@ -15,6 +12,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 @Table(name = "TELEMETRIA")
 @Schema(name = "Telemetria", description = "Métricas de desempenho das APIs do simulador")
 public class TelemetriaEntity extends PanacheEntityBase {

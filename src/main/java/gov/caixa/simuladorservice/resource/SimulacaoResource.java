@@ -1,8 +1,7 @@
 package gov.caixa.simuladorservice.resource;
 
 import gov.caixa.simuladorservice.dto.*;
-import gov.caixa.simuladorservice.exception.SimulacaoIndisponivelException;
-import gov.caixa.simuladorservice.service.EventService;
+import gov.caixa.simuladorservice.exception.ProdutoNaoEncontradoException;
 import gov.caixa.simuladorservice.service.SimulacaoService;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
@@ -26,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Path("/api/v1/simulacoes")
@@ -40,9 +38,6 @@ public class SimulacaoResource {
     @Inject
     SimulacaoService simulacaoService;
 
-    @Inject
-    EventService eventService;
-
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
     private Bucket resolveBucket(String ip) {
@@ -50,7 +45,6 @@ public class SimulacaoResource {
                 .addLimit(Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(1))))
                 .build());
     }
-
 
     @POST
     @Operation(summary = "Simula empréstimo com SAC e PRICE")
@@ -118,18 +112,17 @@ public class SimulacaoResource {
                 usuario, ipCliente, request.getValorDesejado(), request.getPrazo(), correlationIdFinal);
 
         try {
-            SimulacaoResponseDto resposta = simulacaoService.simular(request, correlationIdFinal); //TODO ver auditoria
+            SimulacaoResponseDto resposta = simulacaoService.simular(request, correlationIdFinal);
+
             log.info("Simulação concluída com sucesso para usuário={}", usuario);
 
-            Response response = Response.ok(resposta).build();
-            enviarEvento(resposta.toString(), correlationIdFinal);
+            return Response.ok(resposta).build();
 
-            return Response.ok(response).build();
-
-        } catch (SimulacaoIndisponivelException e) {
-            log.warn("Fallback acionado: {}", e.getMessage());
-            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                    .entity(e.getMessage()).build();
+        } catch (ProdutoNaoEncontradoException e) {
+            log.warn("Simulação não realizada para usuário={}: {}", usuario, e.getMessage());
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(Map.of("erro", e.getMessage()))
+                    .build();
         } catch (Exception e) {
             log.error("Erro na simulação para usuário={} IP={}", usuario, ipCliente, e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -250,15 +243,4 @@ public class SimulacaoResource {
         Bucket bucket = resolveBucket(ipCliente);
         return bucket.tryConsume(1);
     }
-
-    private void enviarEvento(String mensagemJson, String correlationId) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                eventService.enviarEvento(mensagemJson, correlationId);
-            } catch (Exception e) {
-                log.warn("Falha ao enviar evento de simulação (não afeta resposta ao cliente): {}", e.getMessage());
-            }
-        });
-    }
-
 }
