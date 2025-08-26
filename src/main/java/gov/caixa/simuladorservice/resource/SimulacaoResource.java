@@ -12,6 +12,8 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -52,6 +54,8 @@ public class SimulacaoResource {
 
     @POST
     @Operation(summary = "Simula empréstimo com SAC e PRICE")
+    @Timed(name = "simulacao_tempo", description = "Tempo de execução do endpoint /simular")   // métricas para alimentar o Prometheus/Grafana
+    @Counted(name = "simulacao_total", description = "Número de chamadas ao endpoint /simular")
     @APIResponses(value = {
             @APIResponse(
                     responseCode = "200",
