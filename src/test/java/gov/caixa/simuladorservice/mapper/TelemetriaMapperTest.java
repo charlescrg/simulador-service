@@ -24,7 +24,7 @@ class TelemetriaMapperTest {
         TelemetriaEntity entity = mapper.mapDtoParaEntity(dto, data);
 
         assertNotNull(entity);
-        assertEquals("Simulacao", entity.getNomeApi());
+        assertEquals("/api/v1/simulacoes", entity.getNomeApi());
         assertEquals(50, entity.getTempoMs());
         assertEquals(1, entity.getSucesso());
         assertEquals(data, entity.getData());
@@ -42,21 +42,9 @@ class TelemetriaMapperTest {
         TelemetriaEntity entity = mapper.mapDtoParaEntity(dto, data);
 
         assertNotNull(entity);
-        assertEquals("Simulacao", entity.getNomeApi());
+        assertEquals("/api/v1/simulacoes", entity.getNomeApi());
         assertEquals(120, entity.getTempoMs());
         assertEquals(0, entity.getSucesso()); // sucesso null vira 0
         assertEquals(data, entity.getData());
-    }
-
-    @Test
-    void testMapPathToNomeApi() throws Exception {
-        var method = TelemetriaMapper.class.getDeclaredMethod("mapPathToNomeApi", String.class);
-        method.setAccessible(true);
-
-        assertEquals("Simulacao", method.invoke(mapper, "/api/v1/simulacoes"));
-        assertEquals("ListarSimulacoes", method.invoke(mapper, "/api/v1/simulacoes/listar"));
-        assertEquals("VolumeSimulado", method.invoke(mapper, "/api/v1/simulacoes/valores-por-produto-dia"));
-        assertEquals("Telemetria", method.invoke(mapper, "/api/v1/telemetria/listar"));
-        assertEquals("/api/v1/outro-endpoint", method.invoke(mapper, "/api/v1/outro-endpoint"));
     }
 }

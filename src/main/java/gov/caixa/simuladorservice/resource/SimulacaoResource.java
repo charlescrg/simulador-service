@@ -3,6 +3,7 @@ package gov.caixa.simuladorservice.resource;
 import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.exception.ProdutoNaoEncontradoException;
 import gov.caixa.simuladorservice.service.SimulacaoService;
+import gov.caixa.simuladorservice.service.TelemetriaService;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -37,6 +38,9 @@ public class SimulacaoResource {
 
     @Inject
     SimulacaoService simulacaoService;
+
+    @Inject
+    TelemetriaService telemetriaService;
 
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
@@ -91,7 +95,7 @@ public class SimulacaoResource {
             )
     })
     @Authenticated
-        public Response simular(@Valid SimulacaoRequestDto request,
+    public Response simular(@Valid SimulacaoRequestDto request,
                             @Context UriInfo uriInfo,
                             @Context SecurityContext securityContext,
                             @Context HttpHeaders headers,
@@ -100,6 +104,8 @@ public class SimulacaoResource {
         String correlationIdFinal = rastrearCorrelationId(correlationId);
         String ipCliente = extrairIpCliente(headers, uriInfo);
         String usuario = securityContext.getUserPrincipal().getName();
+        long start = System.nanoTime();
+        boolean sucesso = false;
 
         if (!verificarLimiteRequisicoes(ipCliente)) {
             log.warn("Rate limit excedido para IP={} usuário={}", ipCliente, usuario);
@@ -115,7 +121,7 @@ public class SimulacaoResource {
             SimulacaoResponseDto resposta = simulacaoService.simular(request, correlationIdFinal);
 
             log.info("Simulação concluída com sucesso para usuário={}", usuario);
-
+            sucesso = true;
             return Response.ok(resposta).build();
 
         } catch (ProdutoNaoEncontradoException e) {
@@ -127,6 +133,9 @@ public class SimulacaoResource {
             log.error("Erro na simulação para usuário={} IP={}", usuario, ipCliente, e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Erro interno ao processar a simulação").build();
+        } finally {
+            long durationMs = (System.nanoTime() - start) / 1_000_000;
+            telemetriaService.salvarMetricas("Simular", durationMs, sucesso);
         }
     }
 
@@ -169,13 +178,20 @@ public class SimulacaoResource {
     })
     @Authenticated
     public Response listarSimulacoes() {
+        long start = System.nanoTime();
+        boolean sucesso = false;
+
         try {
             ListaSimulacoesResponseDto resposta = simulacaoService.listarSimulacoes();
+            sucesso = true;
             return Response.ok(resposta).build();
         } catch (Exception e) {
             log.error("Erro ao listar simulações", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Erro ao listar simulações").build();
+        } finally {
+            long durationMs = (System.nanoTime() - start) / 1_000_000;
+            telemetriaService.salvarMetricas("Listarsimulacões", durationMs, sucesso);
         }
     }
 
@@ -218,13 +234,19 @@ public class SimulacaoResource {
     })
     @Authenticated
     public Response listarValoresPorProdutoDia() {
+        long start = System.nanoTime();
+        boolean sucesso = false;
         try {
             List<VolumeSimuladoResponseDto> resposta = simulacaoService.listarValoresPorProdutoDia();
+            sucesso = true;
             return Response.ok(resposta).build();
         } catch (Exception e) {
             log.error("Erro ao listar valores simulados por produto/dia", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("Erro ao listar valores simulados por produto/dia").build();
+        } finally {
+            long durationMs = (System.nanoTime() - start) / 1_000_000;
+            telemetriaService.salvarMetricas("listarValoresPorProdutoDia", durationMs, sucesso);
         }
     }
 

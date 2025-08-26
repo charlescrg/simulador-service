@@ -129,7 +129,7 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, 
                     Você será solicitado a trocar a senha no primeiro login (recomendado).
             
                 2️⃣ Configurar o datasource
-                    No menu lateral, clique em Configuration → Data Sources.
+                    No menu lateral, clique em Conections → Data Sources.
                     Clique em Add data source.
                     Escolha Prometheus. 
                         Configure:
@@ -172,11 +172,13 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, 
     Como testar:
         Ao fazer uma requisição para enviar evento, adicione o header X-Correlation-Id com um valor único.
         Reenviar a mesma requisição com o mesmo X-Correlation-Id não irá gerar duplicidade, confirmando a idempotência.
-
-//TODO		 
+	
 ## Testes de Carga com K6
 
 	Este projeto inclui um script de teste de carga usando K6, localizado na raiz como `k6_test_script.js`.
+
+    como testar:
+        docker-compose run --rm k6 run /scripts/k6_test_script.js --out json=/scripts/results/result.json
 
 ### Como executar:
 

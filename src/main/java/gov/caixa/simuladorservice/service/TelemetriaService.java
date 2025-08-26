@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @ApplicationScoped
 public class TelemetriaService {
@@ -24,6 +26,8 @@ public class TelemetriaService {
 
     @Inject
     TelemetriaMapper mapper;
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
 
     public List<TelemetriaResponseDto> listarMetricas() {
         List<Object[]> resultados = repository.listar(); // Query agregada no banco
@@ -59,8 +63,12 @@ public class TelemetriaService {
         return metricas;
     }
 
+    public void salvarMetricas(String path, long tempoMs, boolean sucesso) {
+        executor.execute(() -> salvar(path, tempoMs, sucesso));
+    }
+
     @Transactional
-    public void salvar(String path, long tempoMs, boolean sucesso) {
+    protected void salvar(String path, long tempoMs, boolean sucesso) {
         TelemetriaRequestDto dto = new TelemetriaRequestDto(path, tempoMs, sucesso ? 1 : 0);
         TelemetriaEntity entity = mapper.mapDtoParaEntity(dto, LocalDate.now());
         repository.persist(entity);
