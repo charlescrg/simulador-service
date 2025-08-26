@@ -104,7 +104,7 @@ public class SimulacaoService {
         List<SimulacaoResumoDto> registros = simulacoes.stream()
                 .map(simulacaoMapper::mapearParaResumo)
                 .collect(Collectors.toList());
-        return new ListaSimulacoesResponseDto(registros.size(), 1, registros.size(), registros);
+        return new ListaSimulacoesResponseDto(1, registros.size(), registros.size(), registros);
     }
 
     public List<VolumeSimuladoResponseDto> listarValoresPorProdutoDia() {
