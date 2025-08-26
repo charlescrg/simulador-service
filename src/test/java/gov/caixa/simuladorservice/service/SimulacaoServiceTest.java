@@ -12,18 +12,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 class SimulacaoServiceTest {
+
     @Mock
     SimulacaoRepository simulacaoRepository;
+
     @Mock
     SimuladorFinanceiroService simuladorFinanceiroService;
+
     @Mock
     SimulacaoMapper simulacaoMapper;
+
     @Mock
     ProdutoExternoRepository produtoExternoRepository;
 
@@ -49,15 +55,34 @@ class SimulacaoServiceTest {
                 () -> simulacaoService.simular(request, "corr-id")
         );
 
-        assertEquals("Desculpe! Nenhum produto compatível encontrado.", exception.getMessage());
+        assertEquals("Nenhum produto compatível encontrado.", exception.getMessage());
     }
 
     @Test
-    void testBuscarProdutoRetornaNull() {
+    void testBuscarProdutoRetornaEmpty() {
         SimulacaoRequestDto request = new SimulacaoRequestDto();
         when(produtoExternoRepository.listarTodos()).thenReturn(Collections.emptyList());
-        ProdutoExternoEntity produto = simulacaoService.buscarProduto(request);
-        assertNull(produto);
+
+        Optional<ProdutoExternoEntity> produto = simulacaoService.buscarProduto(request);
+        assertTrue(produto.isEmpty());
+    }
+
+    @Test
+    void testBuscarProdutoRetornaProduto() {
+        SimulacaoRequestDto request = new SimulacaoRequestDto();
+        request.setValorDesejado(BigDecimal.valueOf(1000));
+        request.setPrazo(12);
+
+        ProdutoExternoEntity mockProduto = new ProdutoExternoEntity();
+        mockProduto.setVrMinimo(BigDecimal.valueOf(500));
+        mockProduto.setVrMaximo(BigDecimal.valueOf(2000));
+        mockProduto.setNuMinimoMeses((short) 6);
+        mockProduto.setNuMaximoMeses((short) 24);
+
+        when(produtoExternoRepository.listarTodos()).thenReturn(Collections.singletonList(mockProduto));
+
+        Optional<ProdutoExternoEntity> produto = simulacaoService.buscarProduto(request);
+        assertTrue(produto.isPresent());
+        assertEquals(mockProduto, produto.get());
     }
 }
-

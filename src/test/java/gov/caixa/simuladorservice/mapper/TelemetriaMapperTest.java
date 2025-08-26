@@ -3,6 +3,7 @@ package gov.caixa.simuladorservice.mapper;
 import gov.caixa.simuladorservice.dto.TelemetriaRequestDto;
 import gov.caixa.simuladorservice.entity.simulacao.TelemetriaEntity;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import java.time.LocalDate;
 
@@ -10,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TelemetriaMapperTest {
 
-    private final TelemetriaMapper mapper = new TelemetriaMapper();
+    private final TelemetriaMapper mapper = Mappers.getMapper(TelemetriaMapper.class);
 
     @Test
     void testMapDtoParaEntity() {
@@ -21,7 +22,7 @@ class TelemetriaMapperTest {
 
         LocalDate data = LocalDate.of(2025, 8, 24);
 
-        TelemetriaEntity entity = mapper.mapDtoParaEntity(dto, data);
+        TelemetriaEntity entity = mapper.toEntity(dto, data);
 
         assertNotNull(entity);
         assertEquals("/api/v1/simulacoes", entity.getNomeApi());
@@ -39,7 +40,7 @@ class TelemetriaMapperTest {
 
         LocalDate data = LocalDate.of(2025, 8, 25);
 
-        TelemetriaEntity entity = mapper.mapDtoParaEntity(dto, data);
+        TelemetriaEntity entity = mapper.toEntity(dto, data);
 
         assertNotNull(entity);
         assertEquals("/api/v1/simulacoes", entity.getNomeApi());

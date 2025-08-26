@@ -3,96 +3,30 @@ package gov.caixa.simuladorservice.mapper;
 import gov.caixa.simuladorservice.dto.*;
 import gov.caixa.simuladorservice.entity.produto.ProdutoExternoEntity;
 import gov.caixa.simuladorservice.entity.simulacao.SimulacaoEntity;
-import gov.caixa.simuladorservice.entity.simulacao.SimulacaoTipoEntity;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
-import jakarta.enterprise.context.ApplicationScoped;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 
-@ApplicationScoped
-public class SimulacaoMapper {
+@Mapper(componentModel = "cdi")
+public interface SimulacaoMapper {
 
-    public SimulacaoEntity criarSimulacao(SimulacaoRequestDto request, ProdutoExternoEntity produto, long tempoRespostaMs) {
-        return SimulacaoEntity.builder()
-                .produto(produto.getNoProduto())
-                .codigoProduto(produto.getCoProduto())
-                .dataSimulacao(LocalDate.now())
-                .valorSimulado(request.getValorDesejado())
-                .valorTotalCredito(request.getValorDesejado())
-                .tempoRespostaMs(tempoRespostaMs)
-                .build();
-    }
+    SimulacaoMapper INSTANCE = Mappers.getMapper(SimulacaoMapper.class);
 
-    public SimulacaoResponseDto montarRetornoSimulacao(ProdutoExternoEntity produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price, SimulacaoEntity simulacao) {
-        SimulacaoResponseDto response = new SimulacaoResponseDto();
-        response.setIdSimulacao(simulacao.getId());
-        response.setCodigoProduto(produto.getCoProduto().longValue());
-        response.setDescricaoProduto(produto.getNoProduto());
-        response.setTaxaJuros(produto.getPcTaxaJuros());
-        response.setResultadoSimulacao(List.of(sac, price));
-        return response;
-    }
+    @Mapping(target = "dataSimulacao", expression = "java(java.time.LocalDate.now())")
+    @Mapping(target = "produto", source = "produto.noProduto")
+    @Mapping(target = "codigoProduto", source = "produto.coProduto")
+    @Mapping(target = "valorSimulado", source = "request.valorDesejado")
+    @Mapping(target = "valorTotalCredito", source = "request.valorDesejado")
+    @Mapping(target = "tempoRespostaMs", source = "tempoRespostaMs")
+    SimulacaoEntity criarSimulacao(SimulacaoRequestDto request, ProdutoExternoEntity produto, long tempoRespostaMs);
 
-    public SimulacaoResumoDto mapearParaResumo(SimulacaoEntity simulacao) {
-        Integer prazo = simulacao.getTipos().isEmpty() ? null : simulacao.getTipos().get(0).getPrazo().intValue();
+    @Mapping(target = "idSimulacao", source = "simulacao.id")
+    @Mapping(target = "codigoProduto", source = "produto.coProduto")
+    @Mapping(target = "descricaoProduto", source = "produto.noProduto")
+    @Mapping(target = "taxaJuros", source = "produto.pcTaxaJuros")
+    @Mapping(target = "resultadoSimulacao", expression = "java(java.util.List.of(sac, price))")
+    SimulacaoResponseDto montarRetornoSimulacao(ProdutoExternoEntity produto, ResultadoSimulacaoDto sac, ResultadoSimulacaoDto price, SimulacaoEntity simulacao);
 
-        SimulacaoResumoDto dto = new SimulacaoResumoDto();
-        dto.setIdSimulacao(Math.toIntExact(simulacao.getId()));
-        dto.setValorDesejado(simulacao.getValorSimulado());
-        dto.setPrazo(prazo);
-        List<ValorTotalParcelasTipoDto> valorTotalParcelas = simulacao.getTipos().stream()
-                .map(tipo -> {
-                    ValorTotalParcelasTipoDto tipoDto = new ValorTotalParcelasTipoDto();
-                    tipoDto.setTipo(tipo.getTipoSimulacao());
-                    tipoDto.setValorTotalParcelas(tipo.getValorTotalParcelas());
-                    return tipoDto;
-                })
-                .collect(Collectors.toList());
-        dto.setValorTotalParcelas(valorTotalParcelas);
-
-        return dto;
-    }
-
-    public ListaSimulacoesResponseDto montarListaSimulacoes(List<SimulacaoResumoDto> registros) {
-        return ListaSimulacoesResponseDto.builder()
-                .pagina(1)
-                .qtdRegistros(registros.size())
-                .qtdRegistrosPagina(registros.size())
-                .registros(registros)
-                .build();
-    }
-
-    public Map<LocalDate, Map<String, List<SimulacaoEntity>>> agruparPorDataEProduto(List<SimulacaoEntity> simulacoes) {
-        return simulacoes.stream()
-                .collect(Collectors.groupingBy(
-                        SimulacaoEntity::getDataSimulacao,
-                         Collectors.groupingBy(s -> s.getCodigoProduto() + ":" + s.getProduto())
-                ));
-    }
-
-    public List<SimulacaoTipoEntity> filtrarTipos(List<SimulacaoEntity> simulacoes, String tipo) {
-        return simulacoes.stream()
-                .flatMap(s -> s.getTipos().stream())
-                .filter(t -> tipo.equalsIgnoreCase(t.getTipoSimulacao()))
-                .toList();
-    }
-
-    public SimulacaoProdutoDto montarDtoProduto(String nomeProduto, List<SimulacaoEntity> simulacoesProduto,
-                                                BigDecimal taxaMediaJuroSAC, BigDecimal taxaMediaJuroPRICE,
-                                                BigDecimal valorMedioPrestacaoSAC, BigDecimal valorMedioPrestacaoPRICE,
-                                                BigDecimal valorTotalCreditoSAC, BigDecimal valorTotalCreditoPRICE,
-                                                BigDecimal valorTotalDesejado, Integer codigoProduto) {
-        return SimulacaoProdutoDto.builder()
-                .codigoProduto(codigoProduto)
-                .descricaoProduto(nomeProduto)
-                .taxaMediaJuroSAC(taxaMediaJuroSAC)
-                .taxaMediaJuroPRICE(taxaMediaJuroPRICE)
-                .valorMedioPrestacaoSAC(valorMedioPrestacaoSAC)
-                .valorMedioPrestacaoPRICE(valorMedioPrestacaoPRICE)
-                .valorTotalCreditoSAC(valorTotalCreditoSAC)
-                .valorTotalCreditoPRICE(valorTotalCreditoPRICE)
-                .valorTotalDesejado(valorTotalDesejado)
-                .build();
-    }
+    @Mapping(target = "idSimulacao", expression = "java(Math.toIntExact(simulacao.getId()))")
+    SimulacaoResumoDto mapearParaResumo(SimulacaoEntity simulacao);
 }

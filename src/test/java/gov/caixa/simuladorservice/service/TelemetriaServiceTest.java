@@ -39,13 +39,13 @@ class TelemetriaServiceTest {
         boolean sucesso = true;
 
         TelemetriaEntity entityMock = new TelemetriaEntity();
-        when(mapper.mapDtoParaEntity(any(TelemetriaRequestDto.class), any(LocalDate.class)))
+        when(mapper.toEntity(any(TelemetriaRequestDto.class), any(LocalDate.class)))
                 .thenReturn(entityMock);
 
         service.salvar(path, tempoMs, sucesso);
 
         ArgumentCaptor<TelemetriaRequestDto> dtoCaptor = ArgumentCaptor.forClass(TelemetriaRequestDto.class);
-        verify(mapper).mapDtoParaEntity(dtoCaptor.capture(), any(LocalDate.class));
+        verify(mapper).toEntity(dtoCaptor.capture(), any(LocalDate.class));
         TelemetriaRequestDto dto = dtoCaptor.getValue();
 
         assertEquals(path, dto.getNomeApi());

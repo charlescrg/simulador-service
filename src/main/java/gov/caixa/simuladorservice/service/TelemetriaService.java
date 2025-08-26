@@ -10,6 +10,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -38,7 +39,7 @@ public class TelemetriaService {
             LocalDate data = (LocalDate) r[0];
             String nomeApi = (String) r[1];
             long qtdRequisicoes = ((Number) r[2]).longValue();
-            double tempoMedio = ((Number) r[3]).doubleValue();
+            double tempoMedio = arredondar(((Number) r[3]).doubleValue(), 2);
             long tempoMinimo = ((Number) r[4]).longValue();
             long tempoMaximo = ((Number) r[5]).longValue();
             double percentualSucesso = ((Number) r[6]).doubleValue();
@@ -70,7 +71,12 @@ public class TelemetriaService {
     @Transactional
     protected void salvar(String path, long tempoMs, boolean sucesso) {
         TelemetriaRequestDto dto = new TelemetriaRequestDto(path, tempoMs, sucesso ? 1 : 0);
-        TelemetriaEntity entity = mapper.mapDtoParaEntity(dto, LocalDate.now());
+        TelemetriaEntity entity = mapper.toEntity(dto, LocalDate.now());
         repository.persist(entity);
+    }
+    private double arredondar(double valor, int casas) {
+        return BigDecimal.valueOf(valor)
+                .setScale(casas, BigDecimal.ROUND_HALF_UP)
+                .doubleValue();
     }
 }
