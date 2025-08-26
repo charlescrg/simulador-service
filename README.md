@@ -11,10 +11,13 @@ Simulador-Service (Hackathon VITEC)
 	- Bucket4j (Rate Limiting)
 	- SLF4J (Logging)
 	- SQL Server
+    - PostgreSQL
 	- GitHub Actions (CI/CD)
 	- JUnit / Mockito
 	- Caffeine (Cache)
 	- MicroProfile Fault Tolerance (Circuit Breaker)
+    - Redis
+    - Jaeger
 	- Prometheus / Grafana	
 	- K6 (Teste de carga)
 
@@ -80,8 +83,7 @@ O endpoint de simulação está protegido com:
 	A pipeline inclui:
 	
 	- Configuração do ambiente Java 17
-	- Inicialização de banco SQL Server em container
-	- Execução de script de criação de tabelas (`init.sql`)
+	- Inicialização de banco Postgres em container
 	- Build do projeto com Maven
 	
 	O workflow está definido em `.github/workflows/build.yml`.
@@ -90,8 +92,7 @@ O endpoint de simulação está protegido com:
 
 	O serviço utiliza MicroProfile Fault Tolerance / Resilience4j para aumentar a confiabilidade:
 	
-	- `@CircuitBreaker`: evita sobrecarga em caso de falhas repetidas.
-	  - `@Fallback`: define um método alternativo caso a simulação falhe.
+      - `@CircuitBreaker`: evita sobrecarga em caso de falhas repetidas.
 	  - `@Retry`: tenta executar novamente operações temporariamente instáveis.
 	  - `@Timeout`: limita o tempo máximo de execução de uma requisição.
 	  - `@RateLimit`: controla o número de requisições para evitar abuso.
@@ -102,7 +103,7 @@ O endpoint de simulação está protegido com:
 
 	O projeto utiliza **Caffeine Cache** para armazenar resultados de simulações em memória:
 	
-	- Reduz o tempo de resposta em chamadas repetidas.
+	  - Reduz o tempo de resposta em chamadas repetidas.
 	  - Diminui o processamento desnecessário de cálculos.
 	  - Melhora o desempenho geral do serviço.
 
@@ -146,11 +147,6 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, 
                     
                      Clique em Apply.
 
-            - **Como usar:**
-              ```bash
-              docker-compose up -d
-              ```
-
 **Logging**
     Implementado com SLF4J para registrar eventos importantes da aplicação, incluindo erros e informações de auditoria.
     Os logs incluem informações como correlationId, usuário e parâmetros da requisição, garantindo rastreabilidade.
@@ -168,10 +164,6 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, 
         Antes de processar/enviar o evento, o sistema verifica no Redis se o correlationId já existe (isDuplicate).
         Se já existir, o evento não é reprocessado, evitando duplicidade.
         O correlationId é armazenado com um tempo de expiração (TTL), garantindo que o controle seja temporário e eficiente.
-    
-    Como testar:
-        Ao fazer uma requisição para enviar evento, adicione o header X-Correlation-Id com um valor único.
-        Reenviar a mesma requisição com o mesmo X-Correlation-Id não irá gerar duplicidade, confirmando a idempotência.
 	
 ## Testes de Carga com K6
 
@@ -179,17 +171,5 @@ Este projeto inclui uma infraestrutura de observabilidade utilizando métricas, 
 
     como testar:
         docker-compose run --rm k6 run /scripts/k6_test_script.js --out json=/scripts/results/result.json
-
-### Como executar:
-
-1. Instale o K6:
-   - macOS: `brew install k6`
-   - Windows: `choco install k6`
-   - Linux: veja documentação oficial
-
-2. Execute o teste:
-   ```bash
-   k6 run k6_test_script.js
-   ```
 
  		
