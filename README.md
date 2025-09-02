@@ -1,5 +1,11 @@
 # CaixaHackathonBackend
 
+- evento: https://github.com/HelloysaPires/hackaton-caixa, https://github.com/rodriguesla/api-simulador
+
+- pagina resultado testes: https://github.com/HelloysaPires/hackaton-caixa, https://github.com/rodriguesla/api-simulador
+
+- teste automatizado newman: https://github.com/rodriguesla/api-simulador
+
 Simulador-Service (Hackathon VITEC)
 	Microserviço desenvolvido em Quarkus para simulação de empréstimos, conforme desafio do Hackathon VITEC 2025.
 
